@@ -1,0 +1,5 @@
+name "worker"
+description "A minimal D application."
+authors "Christian Köstlin"
+copyright "Copyright © 2016, Christian Köstlin"
+license "MIT"
