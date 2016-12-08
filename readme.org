@@ -1,4 +1,6 @@
 * repo-worker
+** Introduction
 works your dirty [[https://code.google.com/p/git-repo/][repo]] git repositories with [[https://github.com/gizmomogwai/magit][magit]].
 
-* TODO make command to run on dirty repositories configurable
+** Todos
+*** TODO make command to run on dirty repositories configurable
