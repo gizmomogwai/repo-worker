@@ -1,6 +1,7 @@
 import std.concurrency;
 import std.range;
 import std.file;
+import std.string;
 import std.algorithm;
 import std.parallelism;
 import std.process;
