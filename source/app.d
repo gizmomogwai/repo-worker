@@ -10,6 +10,8 @@ import std.process;
 import std.range;
 import std.stdio;
 import std.string;
+import std.experimental.logger;
+import colorize;
 
 struct Shutdown{}
 struct Reschedule{}
@@ -17,7 +19,7 @@ struct Reschedule{}
 void review(string command, bool verbose) {
   bool finished = false;
   if (verbose) {
-    writeln("reviewer with command: ", command);
+    info("reviewer: started with command '", command, "'");
   }
   while (!finished) {
     receive(
@@ -27,7 +29,7 @@ void review(string command, bool verbose) {
           h = command.replace("%s", project.path);
         }
         if (verbose) {
-          writeln("running review: ", h);
+          info("reviewer: running review: '", h, "'");
         }
         auto res = executeShell(h);
       },
@@ -35,11 +37,6 @@ void review(string command, bool verbose) {
         finished = true;
       });
   }
-}
-auto gitForWorktree(Project project, string[] args ...) {
-  auto workTree = project.path;
-  auto gitDir = "%s/.git".format(workTree);
-  return ["git", "--work-tree", workTree, "--git-dir", gitDir].chain(args).array;
 }
 
 void checker(Tid scheduler, Tid reviewer, bool verbose) {
@@ -49,22 +46,15 @@ void checker(Tid scheduler, Tid reviewer, bool verbose) {
   while (!finished) {
     receive(
       (Project project) {
-        auto cmd = gitForWorktree(project, "status");
-        if (verbose) {
-          writeln("running checker: ", cmd);
-        }
-        auto git = execute(cmd);
-
-        if (git.status == 0) {
-          auto output = git.output;
+        auto cmd = project.git("status").verbose(verbose).message("GettingStatus").run();
+        if (cmd.isDefined) {
+          auto output = cmd.get;
           if (output.indexOf("modified") != -1
               || output.indexOf("deleted") != -1
               || output.indexOf("Untracked") != -1
               || output.indexOf("Changes") != -1) {
             reviewer.send(project);
           }
-        } else {
-          stderr.writeln("command failed: ", cmd, git.output);
         }
         scheduler.send(thisTid());
       },
@@ -153,10 +143,56 @@ struct UploadInfo {
     this.commits = [commit];
   }
 }
+struct Command {
+  string[] command_;
+  bool verbose_ = false;
+  bool dry_ = false;
+  string message_;
+  this(string[] cmd) {
+    this.command_ = cmd;
+  }
+  this(string[] cmd, bool verbose, bool dry, string message) {
+    command_ = cmd;
+    verbose_ = verbose;
+    dry_ = dry;
+    message_ = message;
+  }
+  Command message(string message) {
+    return Command(this.command_, this.verbose_, this.dry_, message);
+  }
+  Command verbose(bool verbose=true) {
+    return Command(this.command_, verbose, this.dry_, this.message_);
+  }
+  Command dry(bool dry=true) {
+    return Command(this.command_, this.verbose_, dry, this.message_);
+  }
+
+  auto run() {
+    if (verbose_ || dry_) {
+      infof("%s: executing %s".format(message_, command_));
+    }
+    if (dry_) {
+      return None!string();
+    }
+    auto res = execute(command_);
+    if (res.status == 0) {
+      return Some(res.output);
+    } else {
+      error(res.output);
+      return None!string();
+    }
+  }
+}
 struct Project {
   string path;
   this(string s) {
     path = s.asAbsolutePath.asNormalizedPath.array;
+  }
+  auto git(string[] args ...) {
+    auto workTree = path;
+    auto gitDir = "%s/.git".format(workTree);
+    auto cmd = ["git", "--work-tree", workTree, "--git-dir", gitDir].chain(args).array;
+    return Command(cmd);
   }
 }
 
@@ -187,12 +223,9 @@ struct Branch {
   private string getRemoteBranch(string s) {
     return s.split(" ")[1].replace("refs/heads/", "");
   }
-  auto getUploadInfo() {
-    auto log = execute(gitForWorktree(project, "log", "--pretty=oneline", "--abbrev-commit", "%s...%s/%s".format(localBranch, remote, remoteBranch)));
-    if (log.status == 0) {
-      return Some(UploadInfo(this, log.output));
-    }
-    return None!UploadInfo();
+  auto getUploadInfo(bool verbose) {
+    auto log = project.git("log", "--pretty=oneline", "--abbrev-commit", "%s...%s/%s".format(localBranch, remote, remoteBranch)).verbose(verbose).message("GetUploadInfo").run();
+    return log.map!(o => UploadInfo(this, o));
   }
 }
 
@@ -209,12 +242,10 @@ auto parseTrackingBranches(Project project, string s) {
   return res;
 }
 
-auto getTrackingBranches(Project project) {
-  auto tracking = execute(gitForWorktree(project, "config", "--get-regex", "branch"));
-  writeln(tracking);
-
-  if (tracking.status == 0) {
-    return parseTrackingBranches(project, tracking.output);
+auto getTrackingBranches(Project project, bool verbose) {
+  auto tracking = project.git("config", "--get-regex", "branch").message("GetTrackingBranches").verbose(verbose).run();
+  if (tracking.isDefined) {
+    return parseTrackingBranches(project, tracking.get);
   }
   Branch[] res;
   return res;
@@ -252,7 +283,6 @@ auto parseUpload(string edit) {
         if (!commitCaptures.empty) {
           auto commit = Commit(commitCaptures[1], commitCaptures[2]);
           res ~= UploadInfo(branch, commit);
-          writeln("something to upload: ", commit);
           findCommit = false;
         }
       }
@@ -262,22 +292,16 @@ auto parseUpload(string edit) {
 }
 
 void doUploads(T)(T uploads, bool dry) {
-  writeln("doing uploads %d:\n%s".format(uploads.length, uploads.map!("a.to!string").join("\n")));
   foreach (upload; uploads) {
-    auto cmd = gitForWorktree(upload.branch.project, "push", upload.branch.remote, "%s:refs/for/%s".format(upload.commits[0].sha1, upload.branch.remoteBranch));
-    if (dry) {
-      writeln(cmd);
-    } else {
-      execute(cmd);
-    }
+    upload.branch.project.git("push", upload.branch.remote, "%s:refs/for/%s".format(upload.commits[0].sha1, upload.branch.remoteBranch)).dry(dry).message("PushingUpstream").run();
   }
 }
 
-auto uploadForRepo(Project project) {
+auto uploadForRepo(Project project, bool verbose) {
   UploadInfo[Branch] uploadInfos;
-  auto branches = getTrackingBranches(project);
+  auto branches = getTrackingBranches(project, verbose);
   foreach (branch; branches) {
-    auto h = branch.getUploadInfo();
+    auto h = branch.getUploadInfo(verbose);
     if (h.isDefined) {
       uploadInfos[branch] = h.get;
     }
@@ -313,7 +337,6 @@ auto findGitsByWalking() {
 auto findGitsFromManifest() {
   auto manifestDir = findProjectList(".");
   if (manifestDir == null) {
-    writeln("ohje");
     throw new Exception("cannot find .repo/project.list");
   }
   auto f = File("%s/.repo/project.list".format(manifestDir), "r");
@@ -324,10 +347,10 @@ auto findGitsFromManifest() {
     .array;
 }
 
-void upload(T)(T projects, bool dry) {
-  auto summary = projects.map!(i => uploadForRepo(i)).join("").strip;
+void upload(T)(T projects, bool verbose, bool dry) {
+  auto summary = projects.map!(i => uploadForRepo(i, verbose)).join("").strip;
   if (summary.length == 0) {
-    stderr.writeln("nothing todo");
+    info("all clean");
     return;
   }
   auto fileName = "/tmp/worker_upload.txt";
@@ -368,6 +391,66 @@ void reviewChanges(T)(T projects, string reviewCommand, bool verbose) {
   reviewer.send(Shutdown());
 }
 
+class AndroidLogger : FileLogger {
+  string[LogLevel] logLevel2String;
+  fg[LogLevel] logLevel2Fg;
+  bg[LogLevel] logLevel2Bg;
+
+  this() {
+    super(stdout, LogLevel.all);
+    initLogLevel2String();
+    initColors();
+  }
+
+  override void writeLogMsg(ref LogEntry payload) {
+    with (payload) {
+      // android logoutput looks lokes this:
+      // 06-06 12:14:46.355 372 18641 D audio_hw_primary: disable_audio_route: reset and update
+      // DATE  TIME         PID TID   LEVEL TAG           Message
+      auto h = timestamp.fracSecs.split!("msecs");
+      auto idx = msg.indexOf(':');
+      string tag = "";
+      string text = "";
+      if (idx == -1) {
+        tag = "stdout";
+        text = msg;
+      } else {
+        tag = msg[0..idx];
+        text = msg[idx+1..$];
+      }
+      this.file.lockingTextWriter().put("%2d-%2d %2d:%2d:%2d.%3d %d %s %s %s: %s\n".format(
+                                          timestamp.month, // DATE
+                                          timestamp.day,
+                                          timestamp.hour, // TIME
+                                          timestamp.minute,
+                                          timestamp.second,
+                                          h.msecs,
+                                          0, // PID
+                                          0, // TID
+                                          logLevel2String[logLevel],
+                                          //"%s.%d".format(file, line),
+                                          tag,
+                                          text).color(logLevel2Fg[logLevel]));
+
+    }
+  }
+  private void initLogLevel2String() {
+    logLevel2String[LogLevel.trace] = "T";
+    logLevel2String[LogLevel.info] = "I";
+    logLevel2String[LogLevel.warning] = "W";
+    logLevel2String[LogLevel.error] = "E";
+    logLevel2String[LogLevel.critical] = "C";
+    logLevel2String[LogLevel.fatal] = "F";
+  }
+
+  private void initColors() {
+    logLevel2Fg[LogLevel.trace] = fg.light_black;
+    logLevel2Fg[LogLevel.info] = fg.white;
+    logLevel2Fg[LogLevel.warning] = fg.yellow;
+    logLevel2Fg[LogLevel.error] = fg.red;
+    logLevel2Fg[LogLevel.critical] = fg.magenta;
+  }
+}
 /++
  + direntries -> queue -> scheduler ----> checker ----> queue -> review
  +                                   \--> checker --/
@@ -376,6 +459,8 @@ void reviewChanges(T)(T projects, string reviewCommand, bool verbose) {
  + review -> magit
  +/
 int main(string[] args) {
+  sharedLog = new AndroidLogger();
+
   string reviewCommand = "magit %s";
   bool verbose = false;
   bool walk = false;
@@ -405,14 +490,14 @@ int main(string[] args) {
   }
 
   auto projects = walk ? findGitsByWalking() : findGitsFromManifest();
-  writeln(projects.length);
 
-  if (args[1] == "upload") {
-    upload(projects, dry);
+  auto command = args[1];
+  if (command == "upload") {
+    upload(projects, verbose, dry);
     return 0;
   }
 
-  if (args[1] == "review") {
+  if (command == "review") {
     projects.reviewChanges(reviewCommand, verbose);
   }
 
