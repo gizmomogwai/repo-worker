@@ -1,25 +1,28 @@
+import colorize;
 import option;
 import std.algorithm.iteration;
 import std.algorithm;
 import std.concurrency;
+import std.experimental.logger;
 import std.file;
 import std.getopt;
 import std.parallelism;
 import std.path;
 import std.process;
 import std.range;
+import std.regex;
 import std.stdio;
 import std.string;
-import std.experimental.logger;
-import colorize;
+import std.typecons;
 
 struct Shutdown{}
 struct Reschedule{}
+alias Work = Tuple!(string, "base", Project[], "projects");
 
 void review(string command, bool verbose) {
   bool finished = false;
   if (verbose) {
-    info("reviewer: started with command '", command, "'");
+    trace("reviewer: started with command '", command, "'");
   }
   while (!finished) {
     receive(
@@ -143,6 +146,7 @@ struct UploadInfo {
     this.commits = [commit];
   }
 }
+
 struct Command {
   string[] command_;
   bool verbose_ = false;
@@ -169,7 +173,7 @@ struct Command {
 
   auto run() {
     if (verbose_ || dry_) {
-      infof("%s: executing %s".format(message_, command_));
+      trace("%s: executing %s".format(message_, command_));
     }
     if (dry_) {
       return None!string();
@@ -184,15 +188,20 @@ struct Command {
   }
 }
 struct Project {
+  string base;
   string path;
-  this(string s) {
-    path = s.asAbsolutePath.asNormalizedPath.array;
+  this(string base, string s) {
+    this.base = base.asAbsolutePath.asNormalizedPath.array;
+    this.path = s.asAbsolutePath.asNormalizedPath.array;
   }
   auto git(string[] args ...) {
     auto workTree = path;
     auto gitDir = "%s/.git".format(workTree);
     auto cmd = ["git", "--work-tree", workTree, "--git-dir", gitDir].chain(args).array;
     return Command(cmd);
+  }
+  string shortPath() {
+    return path.replace(base, "")[1..$];
   }
 }
 
@@ -202,44 +211,67 @@ struct Branch {
   string remote;
   string remoteBranch;
 
-  this (string path, string localBranch, string remote, string remoteBranch) {
-    this.project = Project(path);
+  this (Project project, string localBranch, string remote, string remoteBranch) {
+    this.project = project;
     this.localBranch = localBranch;
     this.remote = remote;
     this.remoteBranch = remoteBranch;
   }
-  this(string path, string s1, string s2) {
-    this.project = Project(path);
-    localBranch = getLocalBranch(s1);
-    remote = getRemote(s1);
-    remoteBranch = getRemoteBranch(s2);
-  }
-  private string getLocalBranch(string s) {
-    return s.split(".")[1];
-  }
-  private string getRemote(string s) {
-    return s.split(" ")[1];
-  }
-  private string getRemoteBranch(string s) {
-    return s.split(" ")[1].replace("refs/heads/", "");
-  }
+
   auto getUploadInfo(bool verbose) {
     auto log = project.git("log", "--pretty=oneline", "--abbrev-commit", "%s...%s/%s".format(localBranch, remote, remoteBranch)).verbose(verbose).message("GetUploadInfo").run();
     return log.map!(o => UploadInfo(this, o));
   }
 }
 
-
 auto parseTrackingBranches(Project project, string s) {
   Branch[] res;
   auto lines = s.strip.split("\n");
-  if (lines.length % 2 == 1) {
-    return res;
-  }
-  for (int i=0; i<lines.length; i += 2) {
-    res ~= Branch(project.path, lines[i], lines[i+1]);
+
+  string branch = null;
+  string remote = null;
+  string remoteBranch = null;
+  auto remoteRegex = ctRegex!("branch\\.(.+?)\\.remote (.+)");
+    auto mergeRegex = ctRegex!("branch\\.(.+?)\\.merge (.+)");
+  foreach (line; lines) {
+    auto remoteCaptures = line.matchFirst(remoteRegex);
+    if (!remoteCaptures.empty) {
+      branch = remoteCaptures[1];
+      remote = remoteCaptures[2];
+    }
+
+    auto mergeCapture = line.matchFirst(mergeRegex);
+    if (!mergeCapture.empty) {
+      remoteBranch = mergeCapture[2];
+    }
+
+    if (branch != null
+        && remote != null
+        && remoteBranch != null) {
+      string cleanUpRemoteBranchName(string s) {
+        return s.replace("refs/heads/", "");
+      }
+      res ~= Branch(project, branch, remote, cleanUpRemoteBranchName(remoteBranch));
+      branch = null;
+      remote = null;
+      remoteBranch = null;
+    }
   }
   return res;
+}
+
+unittest {
+  auto res = parseTrackingBranches(Project("base", "test"), "branch.default.remote gerrit\nbranch.default.merge refs/heads/master\n");
+  assert(res.length == 1);
+  assert(res[0].localBranch == "default");
+  assert(res[0].remote == "gerrit");
+  assert(res[0].remoteBranch == "master");
+
+  res = parseTrackingBranches(Project("base", "test"), "branch.default.remote gerrit\nbranch.default.merge refs/heads/master\nbranch.default.rebase false\n");
+  assert(res.length == 1);
+  assert(res[0].localBranch == "default");
+  assert(res[0].remote == "gerrit");
+  assert(res[0].remoteBranch == "master");
 }
 
 auto getTrackingBranches(Project project, bool verbose) {
@@ -250,16 +282,17 @@ auto getTrackingBranches(Project project, bool verbose) {
   Branch[] res;
   return res;
 }
-import std.regex;
 
-auto parseUpload(string edit) {
-  UploadInfo[] res;
-  string path;
+auto parseUpload(string base, string edit) {
   auto pathRegex = ctRegex!(".*?PROJECT (.*)");
-  Branch branch;
   auto branchRegex = ctRegex!(".*?BRANCH (.+?) -> (.+?)/(.+)");
   auto commitRegex = ctRegex!(".*?(.*?) - (.*)");
-  bool findCommit = false; // flag to search only for first commits in a branch
+
+  UploadInfo[] res;
+  string path;
+
+  Branch branch;
+  bool foundCommit = false; // flag to search only for first commits in a branch
   foreach (line; edit.split("\n")) {
     line = line.strip;
     if (line.empty) {
@@ -272,18 +305,18 @@ auto parseUpload(string edit) {
     }
     auto branchCaptures = line.matchFirst(branchRegex);
     if (!branchCaptures.empty) {
-      branch = Branch(path, branchCaptures[1], branchCaptures[2], branchCaptures[3]);
-      findCommit = true;
+      branch = Branch(Project(base, path), branchCaptures[1], branchCaptures[2], branchCaptures[3]);
+      foundCommit = true;
       continue;
     }
 
-    if (findCommit) {
+    if (foundCommit) {
       if (line[0] != '#') {
         auto commitCaptures = line.matchFirst(commitRegex);
         if (!commitCaptures.empty) {
           auto commit = Commit(commitCaptures[1], commitCaptures[2]);
           res ~= UploadInfo(branch, commit);
-          findCommit = false;
+          foundCommit = false;
         }
       }
     }
@@ -291,6 +324,18 @@ auto parseUpload(string edit) {
   return res;
 }
 
+unittest {
+  auto res = parseUpload("thebase", q"[# PROJECT test
+#   BRANCH default -> remote/master
+     123456 - message
+]");
+  assert(res.length == 1);
+  assert(res[0].branch.localBranch == "default");
+  assert(res[0].branch.remote == "remote");
+  assert(res[0].branch.remoteBranch == "master");
+  assert(res[0].commits.length == 1);
+  assert(res[0].commits[0].sha1 == "123456");
+}
 void doUploads(T)(T uploads, bool dry) {
   foreach (upload; uploads) {
     upload.branch.project.git("push", upload.branch.remote, "%s:refs/for/%s".format(upload.commits[0].sha1, upload.branch.remoteBranch)).dry(dry).message("PushingUpstream").run();
@@ -306,32 +351,57 @@ auto uploadForRepo(Project project, bool verbose) {
       uploadInfos[branch] = h.get;
     }
   }
+
+  return calcUploadText(uploadInfos);
+}
+
+string calcUploadText(UploadInfo[Branch] uploadInfos) {
   bool firstCommitForProject = true;
-  string summary;
+  string[] projects;
   foreach (b; uploadInfos.byKeyValue()) {
     auto branch = b.key;
     auto uploadInfo = b.value;
     bool firstCommitForBranch = true;
+    string project = "";
     foreach (commit; uploadInfo.commits) {
       if (firstCommitForProject) {
-        summary ~= "# PROJECT %s\n".format(project.path);
+        project ~= "# PROJECT %s\n".format(branch.project.shortPath());
         firstCommitForProject = false;
       }
       if (firstCommitForBranch) {
-        summary ~= "#   BRANCH %s -> %s/%s\n".format(branch.localBranch, branch.remote, branch.remoteBranch);
+        project ~= "#   BRANCH %s -> %s/%s\n".format(branch.localBranch, branch.remote, branch.remoteBranch);
         firstCommitForBranch = false;
       }
-      summary ~= "#     %s - %s\n".format(commit.sha1, commit.comment);
+      project ~= "#     %s - %s\n".format(commit.sha1, commit.comment);
+    }
+    if (uploadInfo.commits.length > 0) {
+      projects ~= project;
     }
   }
-  return summary;
+  return projects.join("");
+}
+
+unittest {
+  UploadInfo[Branch] uploadInfos;
+  auto b = Branch(Project("base", "test"), "default", "remote", "master");
+  uploadInfos[b] = UploadInfo(b, Commit("123456", "message"));
+  auto res = calcUploadText(uploadInfos);
+  writeln(res);
+  auto expected = q"[# PROJECT Users/gizmo/Dropbox/Documents/_projects/d/repo-worker/test
+#   BRANCH default -> remote/master
+#     123456 - message
+]";
+  writeln(expected);
+  assert(res == expected);
 }
 
 auto findGitsByWalking() {
-  return dirEntries("", ".git", SpanMode.depth)
-    .filter!(f => f.isDir && f.name.endsWith(".git"))
-    .map!(f => Project("%s/..".format(f)))
-    .array;
+  string base = ".".asAbsolutePath.asNormalizedPath.array;
+  return Work(base,
+          dirEntries("", ".git", SpanMode.depth)
+            .filter!(f => f.isDir && f.name.endsWith(".git"))
+            .map!(f => Project(base, "%s/..".format(f)))
+              .array);
 }
 
 auto findGitsFromManifest() {
@@ -340,19 +410,24 @@ auto findGitsFromManifest() {
     throw new Exception("cannot find .repo/project.list");
   }
   auto f = File("%s/.repo/project.list".format(manifestDir), "r");
-  return f
-    .byLine()
-    .map!(line => Project("%s/%s".format(manifestDir, line.dup)))
-    .chain([Project("%s/%s".format(manifestDir, ".repo/manifests"))])
-    .array;
+  return Work(manifestDir,
+              f
+              .byLine()
+              .map!(line => Project(manifestDir, "%s/%s".format(manifestDir, line.dup)))
+              .chain([Project(manifestDir, "%s/%s".format(manifestDir, ".repo/manifests"))])
+              .array);
 }
 
-void upload(T)(T projects, bool verbose, bool dry) {
-  auto summary = projects.map!(i => uploadForRepo(i, verbose)).join("").strip;
+void upload(T)(string base, T projects, bool verbose, bool dry) {
+  auto summary = projects
+    .map!(i => uploadForRepo(i, verbose))
+    .filter!(i => i.length > 0).join("\n");
   if (summary.length == 0) {
     info("all clean");
     return;
   }
+  summary = "# Workspace: %s\n\n".format(base) ~ summary;
+
   auto fileName = "/tmp/worker_upload.txt";
   auto file = File(fileName, "w");
   file.write(summary);
@@ -364,7 +439,7 @@ void upload(T)(T projects, bool verbose, bool dry) {
 
   auto edit = execute([environment.get("EDITOR", "vi"), "/tmp/worker_upload.txt"]);
   string editContent = readText(fileName);
-  auto toUpload = parseUpload(editContent);
+  auto toUpload = parseUpload(base, editContent);
   doUploads(toUpload, dry);
 }
 
@@ -391,12 +466,17 @@ void reviewChanges(T)(T projects, string reviewCommand, bool verbose) {
   reviewer.send(Shutdown());
 }
 
+string tid2string(Tid id) @trusted {
+  import std.conv : text;
+  return text(id).replace("Tid(", "").replace(")", "");
+}
+
 class AndroidLogger : FileLogger {
   string[LogLevel] logLevel2String;
   fg[LogLevel] logLevel2Fg;
   bg[LogLevel] logLevel2Bg;
 
-  this() {
+  this() @system {
     super(stdout, LogLevel.all);
     initLogLevel2String();
     initColors();
@@ -409,7 +489,7 @@ class AndroidLogger : FileLogger {
       // DATE  TIME         PID TID   LEVEL TAG           Message
       auto h = timestamp.fracSecs.split!("msecs");
       auto idx = msg.indexOf(':');
-      string tag = "";
+      string tag = ""; // "%s.%d".format(file, line),
       string text = "";
       if (idx == -1) {
         tag = "stdout";
@@ -418,17 +498,16 @@ class AndroidLogger : FileLogger {
         tag = msg[0..idx];
         text = msg[idx+1..$];
       }
-      this.file.lockingTextWriter().put("%2d-%2d %2d:%2d:%2d.%3d %d %s %s %s: %s\n".format(
+      this.file.lockingTextWriter().put("%02d-%02d %02d:%02d:%02d.%03d %d %s %s %s: %s\n".format(
                                           timestamp.month, // DATE
                                           timestamp.day,
                                           timestamp.hour, // TIME
                                           timestamp.minute,
                                           timestamp.second,
                                           h.msecs,
-                                          0, // PID
-                                          0, // TID
+                                          std.process.thisProcessID, // PID
+                                          tid2string(threadId), // TID
                                           logLevel2String[logLevel],
-                                          //"%s.%d".format(file, line),
                                           tag,
                                           text).color(logLevel2Fg[logLevel]));
 
@@ -451,6 +530,7 @@ class AndroidLogger : FileLogger {
     logLevel2Fg[LogLevel.critical] = fg.magenta;
   }
 }
+
 /++
  + direntries -> queue -> scheduler ----> checker ----> queue -> review
  +                                   \--> checker --/
@@ -493,12 +573,12 @@ int main(string[] args) {
 
   auto command = args[1];
   if (command == "upload") {
-    upload(projects, verbose, dry);
+    upload(projects.base, projects.projects, verbose, dry);
     return 0;
   }
 
   if (command == "review") {
-    projects.reviewChanges(reviewCommand, verbose);
+    projects.projects.reviewChanges(reviewCommand, verbose);
   }
 
   return 0;
