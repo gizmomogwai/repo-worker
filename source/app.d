@@ -386,12 +386,10 @@ unittest {
   auto b = Branch(Project("base", "test"), "default", "remote", "master");
   uploadInfos[b] = UploadInfo(b, Commit("123456", "message"));
   auto res = calcUploadText(uploadInfos);
-  writeln(res);
   auto expected = q"[# PROJECT Users/gizmo/Dropbox/Documents/_projects/d/repo-worker/test
 #   BRANCH default -> remote/master
 #     123456 - message
 ]";
-  writeln(expected);
   assert(res == expected);
 }
 
@@ -421,12 +419,13 @@ auto findGitsFromManifest() {
 void upload(T)(string base, T projects, bool verbose, bool dry) {
   auto summary = projects
     .map!(i => uploadForRepo(i, verbose))
-    .filter!(i => i.length > 0).join("\n");
+    .filter!(i => i.length > 0).join("# --------------------------------------------------------------------------------\n");
   if (summary.length == 0) {
     info("all clean");
     return;
   }
-  summary = "# Workspace: %s\n\n".format(base) ~ summary;
+  auto sep = "# ================================================================================";
+  summary = "# Workspace: %s\n%s\n".format(base, sep) ~ summary;
 
   auto fileName = "/tmp/worker_upload.txt";
   auto file = File(fileName, "w");
