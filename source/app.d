@@ -192,10 +192,17 @@ struct Project {
   string path;
   this(string base, string s) {
     this.base = base.asAbsolutePath.asNormalizedPath.array;
-    this.path = s.asAbsolutePath.asNormalizedPath.array;
+    if (s[0] == '/') {
+      this.path = s;
+    } else {
+      this.path = this.base ~ "/" ~ s;
+    }
+    if (this.path == "/home/gizmo/_projects/audicgw/nxp/android_user_build/esrlabs/gradle/someip-plugin/device/cgw") {
+      throw new Exception("arghl");
+    }
   }
   auto git(string[] args ...) {
-    auto workTree = path;
+    auto workTree = this.path;
     auto gitDir = "%s/.git".format(workTree);
     auto cmd = ["git", "--work-tree", workTree, "--git-dir", gitDir].chain(args).array;
     return Command(cmd);
@@ -232,7 +239,7 @@ auto parseTrackingBranches(Project project, string s) {
   string remote = null;
   string remoteBranch = null;
   auto remoteRegex = ctRegex!("branch\\.(.+?)\\.remote (.+)");
-    auto mergeRegex = ctRegex!("branch\\.(.+?)\\.merge (.+)");
+  auto mergeRegex = ctRegex!("branch\\.(.+?)\\.merge (.+)");
   foreach (line; lines) {
     auto remoteCaptures = line.matchFirst(remoteRegex);
     if (!remoteCaptures.empty) {
@@ -294,7 +301,7 @@ auto parseUpload(string base, string edit) {
   Branch branch;
   bool foundCommit = false; // flag to search only for first commits in a branch
   foreach (line; edit.split("\n")) {
-    line = line.strip;
+    line = line.strip.dup;
     if (line.empty) {
       continue;
     }
@@ -336,9 +343,13 @@ unittest {
   assert(res[0].commits.length == 1);
   assert(res[0].commits[0].sha1 == "123456");
 }
-void doUploads(T)(T uploads, bool dry) {
+void doUploads(T)(T uploads, bool verbose, bool dry) {
   foreach (upload; uploads) {
-    upload.branch.project.git("push", upload.branch.remote, "%s:refs/for/%s".format(upload.commits[0].sha1, upload.branch.remoteBranch)).dry(dry).message("PushingUpstream").run();
+    upload.branch.project.git("push", upload.branch.remote, "%s:refs/for/%s".format(upload.commits[0].sha1, upload.branch.remoteBranch))
+      .dry(dry)
+      .verbose(verbose)
+      .message("PushingUpstream")
+      .run();
   }
 }
 
@@ -439,7 +450,7 @@ void upload(T)(string base, T projects, bool verbose, bool dry) {
   auto edit = execute([environment.get("EDITOR", "vi"), "/tmp/worker_upload.txt"]);
   string editContent = readText(fileName);
   auto toUpload = parseUpload(base, editContent);
-  doUploads(toUpload, dry);
+  doUploads(toUpload, verbose, dry);
 }
 
 void reviewChanges(T)(T projects, string reviewCommand, bool verbose) {
