@@ -2,6 +2,7 @@
 	"fileVersion": 1,
 	"versions": {
 		"colorize": "1.0.5",
-		"d-option": "0.0.7"
+		"d-option": "0.0.7",
+		"unit-threaded": "0.7.4"
 	}
 }

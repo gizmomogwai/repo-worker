@@ -5,3 +5,20 @@ copyright "Copyright © 2016, Christian Köstlin"
 license "MIT"
 dependency "d-option" version="~>0.0.7"
 dependency "colorize" version="~>1.0.5"
+dependency "unit-threaded" version="==0.7.4"
+
+configuration "application" {
+  targetType "executable"
+}
+
+configuration "library" {
+  targetType "library"
+
+  excludeSourceFiles "source/app.d"
+}
+
+configuration "unittest" {
+  targetType "executable"
+
+  excludeSourceFiles "source/app.d"
+}

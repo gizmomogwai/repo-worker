@@ -547,15 +547,90 @@ class AndroidLogger : FileLogger {
   }
 }
 
-import repoworker;
-/++
- + direntries -> queue -> scheduler ----> checker ----> queue -> review
- +                                   \--> checker --/
- +                                    \-> checker -/
- + checker -> git status
- + review -> magit
- +/
-int main(string[] args) {
-  return repoWorker(args);
+int repoWorker(string[] args) {
+  sharedLog = new AndroidLogger();
+
+  string reviewCommand = "magit %s";
+  bool verbose = false;
+  bool walk = false;
+  bool dry = false;
+  auto help = getopt(
+    args,
+    "walk|w", "Walk directories instead of using repo.", &walk,
+    "verbose|v", "Output diagnostic information.", &verbose,
+    "dry|d", "dry run.", &dry,
+    "reviewCommand|r", q"[
+  Command to run for reviewing changes. %s is replaced by the working directory.
+  examples include:
+    - gitk: 'env GIT_DIR=%s/.git GIT_WORK_TREE=%s gitk --all'
+    - gitg: 'gitg --commit %s'
+    - git-cola: 'git-cola -r %s'
+    - giggle: 'giggle %s']", &reviewCommand,
+  );
+  if (help.helpWanted) {
+    defaultGetoptPrinter(
+      "worker [options] review/upload\nWorks with trees of gits either by searching for git repositories, or using information in a https://code.google.com/p/git-repo manifest folder.\nOptions:",
+      help.options);
+    return 0;
+  }
+
+  if (args.length != 2) {
+    throw new Exception("please specify action review/upload");
+  }
+
+  auto projects = walk ? findGitsByWalking() : findGitsFromManifest();
+
+  auto command = args[1];
+  if (command == "upload") {
+    upload(projects.base, projects.projects, verbose, dry);
+    return 0;
+  }
+
+  if (command == "review") {
+    projects.projects.reviewChanges(reviewCommand, verbose);
+  }
+
+  return 0;
 }
 
+auto getRulingDirectories(string start) {
+  import std.path;
+  auto res = appender!(string[])();
+  auto oldDir = "";
+  string dir = start.asAbsolutePath.asNormalizedPath.array;
+  while (true) {
+    oldDir = dir;
+    res.put(dir);
+    dir = "%s/..".format(dir).asAbsolutePath.asNormalizedPath.array;
+    if (dir == oldDir) {
+      break;
+    }
+  }
+  return res.data;
+}
+unittest {
+  auto all = getRulingDirectories("test/without_repo/test");
+  assert(all.length > 3);
+}
+
+string findProjectList(string start) {
+  auto all = getRulingDirectories(start);
+  auto existing = all.find!((string a, string b) => exists("%s/%s".format(a, b)))(".repo/project.list");
+
+  if (existing.empty) {
+    return null;
+  }
+
+  return existing.front;
+}
+
+unittest {
+  auto res = findProjectList("test/without_repo/test");
+  assert(res == null);
+}
+
+unittest {
+  import std.path;
+  auto res = findProjectList("test/with_repo/test");
+  assert(res == "test/with_repo".asAbsolutePath.asNormalizedPath.array);
+}
