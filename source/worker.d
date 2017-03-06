@@ -1,3 +1,5 @@
+module worker;
+
 import colorize;
 import option;
 import std.algorithm.iteration;
@@ -18,6 +20,14 @@ import std.typecons;
 struct Shutdown{}
 struct Reschedule{}
 alias Work = Tuple!(string, "base", Project[], "projects");
+
+/++
+ + direntries -> queue -> scheduler ----> checker ----> queue -> review
+ +                                   \--> checker --/
+ +                                    \-> checker -/
+ + checker -> git status
+ + review -> magit
+ +/
 
 void review(string command, bool verbose) {
   bool finished = false;
@@ -272,17 +282,19 @@ auto parseTrackingBranches(Project project, string s) {
 }
 
 unittest {
+  import unit_threaded;
+
   auto res = parseTrackingBranches(Project("base", "test"), "branch.default.remote gerrit\nbranch.default.merge refs/heads/master\n");
-  assert(res.length == 1);
-  assert(res[0].localBranch == "default");
-  assert(res[0].remote == "gerrit");
-  assert(res[0].remoteBranch == "master");
+  res.length.shouldEqual(1);
+  res[0].localBranch.shouldEqual("default");
+  res[0].remote.shouldEqual("gerrit");
+  res[0].remoteBranch.shouldEqual("master");
 
   res = parseTrackingBranches(Project("base", "test"), "branch.default.remote gerrit\nbranch.default.merge refs/heads/master\nbranch.default.rebase false\n");
-  assert(res.length == 1);
-  assert(res[0].localBranch == "default");
-  assert(res[0].remote == "gerrit");
-  assert(res[0].remoteBranch == "master");
+  res.length.shouldEqual(1);
+  res[0].localBranch.shouldEqual("default");
+  res[0].remote.shouldEqual("gerrit");
+  res[0].remoteBranch.shouldEqual("master");
 }
 
 auto getTrackingBranches(Project project, bool verbose) {
@@ -399,15 +411,17 @@ string calcUploadText(UploadInfo[Branch] uploadInfos) {
 }
 
 unittest {
+  import unit_threaded;
+
   UploadInfo[Branch] uploadInfos;
   auto b = Branch(Project("base", "test"), "default", "remote", "master");
   uploadInfos[b] = UploadInfo(b, Commit("123456", "message"));
   auto res = calcUploadText(uploadInfos);
-  auto expected = q"[# PROJECT Users/gizmo/Dropbox/Documents/_projects/d/repo-worker/test
+  auto expected = q"[# PROJECT test
 #   BRANCH default -> remote/master
 #     123456 - message
 ]";
-  assert(res == expected);
+  res.shouldEqual(expected);
 }
 
 auto findGitsByWalking() {
@@ -547,7 +561,7 @@ class AndroidLogger : FileLogger {
   }
 }
 
-int repoWorker(string[] args) {
+int worker(string[] args) {
   sharedLog = new AndroidLogger();
 
   string reviewCommand = "magit %s";
@@ -608,9 +622,12 @@ auto getRulingDirectories(string start) {
   }
   return res.data;
 }
+
 unittest {
+  import unit_threaded;
+
   auto all = getRulingDirectories("test/without_repo/test");
-  assert(all.length > 3);
+  all.length.shouldBeGreaterThan(3);
 }
 
 string findProjectList(string start) {
