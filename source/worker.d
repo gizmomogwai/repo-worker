@@ -1,6 +1,6 @@
 module worker;
 
-import colorize;
+import androidlogger;
 import option;
 import std.algorithm.iteration;
 import std.algorithm;
@@ -496,83 +496,19 @@ void reviewChanges(T)(T projects, string reviewCommand, bool verbose) {
   reviewer.send(Shutdown());
 }
 
-string tid2string(Tid id) @trusted {
-  import std.conv : text;
-  return text(id).replace("Tid(", "").replace(")", "");
-}
-
-class AndroidLogger : FileLogger {
-  string[LogLevel] logLevel2String;
-  fg[LogLevel] logLevel2Fg;
-  bg[LogLevel] logLevel2Bg;
-
-  this() @system {
-    super(stdout, LogLevel.all);
-    initLogLevel2String();
-    initColors();
-  }
-
-  override void writeLogMsg(ref LogEntry payload) {
-    with (payload) {
-      // android logoutput looks lokes this:
-      // 06-06 12:14:46.355 372 18641 D audio_hw_primary: disable_audio_route: reset and update
-      // DATE  TIME         PID TID   LEVEL TAG           Message
-      auto h = timestamp.fracSecs.split!("msecs");
-      auto idx = msg.indexOf(':');
-      string tag = ""; // "%s.%d".format(file, line),
-      string text = "";
-      if (idx == -1) {
-        tag = "stdout";
-        text = msg;
-      } else {
-        tag = msg[0..idx];
-        text = msg[idx+1..$];
-      }
-      this.file.lockingTextWriter().put("%02d-%02d %02d:%02d:%02d.%03d %d %s %s %s: %s\n".format(
-                                          timestamp.month, // DATE
-                                          timestamp.day,
-                                          timestamp.hour, // TIME
-                                          timestamp.minute,
-                                          timestamp.second,
-                                          h.msecs,
-                                          std.process.thisProcessID, // PID
-                                          tid2string(threadId), // TID
-                                          logLevel2String[logLevel],
-                                          tag,
-                                          text).color(logLevel2Fg[logLevel]));
-
-    }
-  }
-  private void initLogLevel2String() {
-    logLevel2String[LogLevel.trace] = "T";
-    logLevel2String[LogLevel.info] = "I";
-    logLevel2String[LogLevel.warning] = "W";
-    logLevel2String[LogLevel.error] = "E";
-    logLevel2String[LogLevel.critical] = "C";
-    logLevel2String[LogLevel.fatal] = "F";
-  }
-
-  private void initColors() {
-    logLevel2Fg[LogLevel.trace] = fg.light_black;
-    logLevel2Fg[LogLevel.info] = fg.white;
-    logLevel2Fg[LogLevel.warning] = fg.yellow;
-    logLevel2Fg[LogLevel.error] = fg.red;
-    logLevel2Fg[LogLevel.critical] = fg.magenta;
-  }
-}
 
 int worker(string[] args) {
-  sharedLog = new AndroidLogger();
-
   string reviewCommand = "magit %s";
   bool verbose = false;
   bool walk = false;
   bool dry = false;
+  bool withColors = true;
   auto help = getopt(
     args,
     "walk|w", "Walk directories instead of using repo.", &walk,
     "verbose|v", "Output diagnostic information.", &verbose,
     "dry|d", "dry run.", &dry,
+    "colors|c", "colorful output.", &withColors,
     "reviewCommand|r", q"[
   Command to run for reviewing changes. %s is replaced by the working directory.
   examples include:
@@ -587,6 +523,8 @@ int worker(string[] args) {
       help.options);
     return 0;
   }
+
+  sharedLog = new AndroidLogger(withColors);
 
   if (args.length != 2) {
     throw new Exception("please specify action review/upload");
