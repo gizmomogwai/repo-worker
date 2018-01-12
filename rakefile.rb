@@ -8,6 +8,7 @@ end
 desc 'build'
 task :build do
   sh "dub build"
+  sh "cp worker ~/bin/"
 end
 
 desc 'docs'

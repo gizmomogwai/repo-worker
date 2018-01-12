@@ -360,10 +360,11 @@ unittest {
   assert(res[0].commits.length == 1);
   assert(res[0].commits[0].sha1 == "123456");
 }
-void doUploads(T)(T uploads, bool verbose, bool dry) {
+void doUploads(T)(T uploads, bool verbose, bool dry, string topic) {
   foreach (upload; uploads) {
     writeln(upload);
-    upload.branch.project.git("push", upload.branch.remote, "%s:refs/for/%s".format(upload.commits[0].sha1, upload.branch.remoteBranch))
+    auto topicParameter = topic == null ? "" : "%%topic=%s".format(topic);
+    upload.branch.project.git("push", upload.branch.remote, "%s:refs/for/%s%s".format(upload.commits[0].sha1, upload.branch.remoteBranch, topicParameter))
       .dry(dry)
       .verbose(verbose)
       .message("PushingUpstream")
@@ -447,7 +448,7 @@ auto findGitsFromManifest() {
               .array);
 }
 
-void upload(T)(string base, T projects, bool verbose, bool dry) {
+void upload(T)(string base, T projects, bool verbose, bool dry, string topic) {
   auto summary = projects
     .map!(i => uploadForRepo(i, verbose))
     .filter!(i => i.length > 0).join("# --------------------------------------------------------------------------------\n");
@@ -456,7 +457,8 @@ void upload(T)(string base, T projects, bool verbose, bool dry) {
     return;
   }
   auto sep = "# ================================================================================";
-  summary = "# Workspace: %s\n%s\n".format(base, sep) ~ summary;
+  auto topicMessage = topic == null ? "" : "Topic: %s".format(topic);
+  summary = "# Workspace: %s\n%s\n".format(base, sep) ~ summary ~ topicMessage;
 
   auto fileName = "/tmp/worker_upload.txt";
   auto file = File(fileName, "w");
@@ -470,7 +472,7 @@ void upload(T)(string base, T projects, bool verbose, bool dry) {
   auto edit = execute([environment.get("EDITOR", "vi"), "/tmp/worker_upload.txt"]);
   string editContent = readText(fileName);
   auto toUpload = parseUpload(base, editContent);
-  doUploads(toUpload, verbose, dry);
+  doUploads(toUpload, verbose, dry, topic);
 }
 
 void reviewChanges(T)(T projects, string reviewCommand, bool verbose) {
@@ -503,10 +505,12 @@ int worker(string[] args) {
   bool walk = false;
   bool dry = false;
   bool withColors = true;
+  string topic;
   auto help = getopt(
     args,
     "walk|w", "Walk directories instead of using repo.", &walk,
     "verbose|v", "Output diagnostic information.", &verbose,
+    "topic|t", "add gerrit topic", &topic,
     "dry|d", "dry run.", &dry,
     "colors|c", "colorful output.", &withColors,
     "reviewCommand|r", q"[
@@ -534,7 +538,7 @@ int worker(string[] args) {
 
   auto command = args[1];
   if (command == "upload") {
-    upload(projects.base, projects.projects, verbose, dry);
+    upload(projects.base, projects.projects, verbose, dry, topic);
     return 0;
   }
 
