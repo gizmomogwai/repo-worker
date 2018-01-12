@@ -456,9 +456,9 @@ void upload(T)(string base, T projects, bool verbose, bool dry, string topic) {
     info("all clean");
     return;
   }
+  auto topicMessage = topic == null ? "" : "\n# Topic: %s".format(topic);
   auto sep = "# ================================================================================";
-  auto topicMessage = topic == null ? "" : "Topic: %s".format(topic);
-  summary = "# Workspace: %s\n%s\n".format(base, sep) ~ summary ~ topicMessage;
+  summary = "# Workspace: %s%s\n%s\n".format(base, topicMessage, sep) ~ summary;
 
   auto fileName = "/tmp/worker_upload.txt";
   auto file = File(fileName, "w");
