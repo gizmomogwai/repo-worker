@@ -1,7 +1,7 @@
 {
 	"fileVersion": 1,
 	"versions": {
-		"androidlogger": "0.0.1",
+    "androidlogger": "0.0.2",
 		"colored": "0.0.4",
 		"colorize": "1.0.5",
 		"d-option": "0.0.7",

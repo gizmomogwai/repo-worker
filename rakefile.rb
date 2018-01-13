@@ -15,3 +15,8 @@ desc 'docs'
 task :docs do
   sh "dub build --build=docs"
 end
+
+desc 'format'
+task :format do
+  sh "find . -name '*.d' | xargs dfmt -i"
+end
