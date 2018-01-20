@@ -1,3 +1,15 @@
+/++
+ + Copyright: Copyright © 2016, Christian Köstlin
+ +/
+
+/++
+ + Authors: Christian Koestlin, Christian Köstlin
+ +/
+
+/++
+ + License: MIT
+ +/
+
 module worker;
 
 import std.traits;
@@ -71,7 +83,8 @@ enum State
 auto dirty(string output)
 {
     return output.indexOf("modified") != -1 || output.indexOf("deleted") != -1
-        || output.indexOf("Untracked") != -1 || output.indexOf("Changes") != -1 ? State.dirty : State.clean;
+        || output.indexOf("Untracked") != -1 || output.indexOf("Changes") != -1
+        ? State.dirty : State.clean;
 }
 
 void checker(Tid scheduler, Tid reviewer)
@@ -302,8 +315,9 @@ struct Branch
 
     auto getUploadInfo()
     {
-        auto log = project.git("log", "--pretty=oneline", "--abbrev-commit", "%s...%s/%s".format(localBranch,
-                remote, remoteBranch)).message("GetUploadInfo").run();
+        auto log = project.git("log", "--pretty=oneline", "--abbrev-commit",
+                "%s...%s/%s".format(localBranch, remote, remoteBranch)).message(
+                "GetUploadInfo").run();
         return log.map!(o => UploadInfo(this, o));
     }
 }

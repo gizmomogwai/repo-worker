@@ -1,0 +1,24 @@
+language: d
+sudo: false
+addons:
+  apt:
+    packages:
+    - libevent-dev
+before_install: pip install --user codecov
+script:
+- dub test --compiler=${DC} --coverage
+- dub build --build=release
+- dub build --build=ddox
+after_success: codecov
+deploy:
+  provider: pages
+  skip-cleanup: true
+  local-dir: docs
+  github-token: "$GH_REPO_TOKEN"
+  verbose: true
+  keep-history: true
+  on:
+    branch: master
+env:
+  global:
+  - secure: xTnAn8n5lCOEWvCIMpfigFFthqWk9Gz/ie5UVf8QN3+PxBwq/LRB8Qnj+09t69jeV6rILIy5v6mJZTLW4WpdeZfURV5oH7fMSUQcAq4RK0b3iPn01NM1PvZQbcTizmih7U1v+C5od8UC8d6eDtHjZ7UtjXoj61yLuFyaNNz1RS0ZSe3oHJ+r8o6LgUzpQ4Fl1vT2ev6KMc5AWtfs/aFrc0OxWaBfmCt9N58MqF7A7D9k2nGzhYk4lwSy1P/L0fAmJ/+b128SAhWFv6Oxdvfm93fv2P+4G5OX208VBb2Mxc2L7T46WanmEF5N35x3MZ89Sn5dgKb51T0ZDT9B4u7Hz9uUj0wHvDYGM55sfh96iJ8YSWaFe7f4sjXGcW1x1EZBtt1kwQ0jBjEYa8T7mQuwwndpltFHdzDJAbgRUIm4i2Sqv3KqgHkoXyDb8VdwFnx49H7mbRg2NZ/rJ6L9slt18FzvZhR9Nri2FoUVaDv7aGUfCUqi33XL74FhweJniCCrTrzqlevFZa9szmBbSczlYrtKJ+NGchwBQWpw0eJ5kGkNjj0oeesXAt5ATAP3VtOG3rfwbkulXQ54f4kpUNJwoJ/z0MI8lZYdwRvrwkL4WKdO5Jco9RxzKFGBUhoq/YescQbruWH8LIF2dqTMhmlmiV7CuCRnUWL6yx0UfASsD5U=
