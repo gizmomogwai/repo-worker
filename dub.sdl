@@ -4,7 +4,7 @@ authors "Christian Köstlin"
 copyright "Copyright © 2016, Christian Köstlin"
 license "MIT"
 dependency "d-option" version="~>0.0.7"
-dependency "colored" version="==0.0.4"
+dependency "colored" version="~>0.0.8"
 dependency "androidlogger" version="~>0.0.2"
 
 configuration "application" {
@@ -13,18 +13,18 @@ configuration "application" {
 
 configuration "library" {
   targetType "library"
-
   excludedSourceFiles "source/app.d"
 }
 
 configuration "unittest" {
   targetType "executable"
 
-  dependency "unit-threaded" version="==0.7.25"
-  preBuildCommands "dub run unit-threaded -c gen_ut_main -- -f gen/ut.d"
-  mainSourceFile "gen/ut.d"
+  dependency "unit-threaded" version="==0.7.36"
+  preBuildCommands "dub run unit-threaded -c gen_ut_main -- -f out/generated/unit-threaded/ut.d"
+  mainSourceFile "out/generated/unit-threaded/ut.d"
   excludedSourceFiles "source/app.d"
 }
+
 x:ddoxFilterArgs "--min-protection=Private"
 sourcePaths "source" "out/generated/packageversion"
 importPaths "source" "out/generated/packageversion"

@@ -1,16 +1,9 @@
 /++
  + Copyright: Copyright © 2016, Christian Köstlin
- +/
-
-/++
  + Authors: Christian Koestlin, Christian Köstlin
- +/
-
-/++
  + License: MIT
  +/
-
-module worker;
+module worker.code;
 
 import std.traits;
 import androidlogger;
@@ -614,7 +607,7 @@ void reviewChanges(T)(T work, string reviewCommand)
     reviewer.send(Shutdown());
 }
 
-int worker(string[] args)
+int workerMain(string[] args)
 {
     string reviewCommand = "magit %s";
     bool walk = false;
@@ -639,7 +632,8 @@ int worker(string[] args)
     // dfmt on
     if (help.helpWanted)
     {
-        defaultGetoptPrinter("worker [options] review/upload\nWorks with trees of gits either by searching for git repositories, or using information in a https://code.google.com/p/git-repo manifest folder.\nOptions:",
+        import worker.packageversion;
+        defaultGetoptPrinter("worker %s [options] review/upload\nWorks with trees of gits either by searching for git repositories, or using information in a https://code.google.com/p/git-repo manifest folder.\nOptions:".format(worker.packageversion.packageVersion),
                 help.options);
         return 0;
     }
