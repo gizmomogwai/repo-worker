@@ -4,7 +4,9 @@ addons:
   apt:
     packages:
     - libevent-dev
-before_install: pip install --user codecov
+before_install:
+- pip install --user codecov
+- dub fetch packageversion
 script:
 - dub test --compiler=${DC} --coverage
 - dub build --build=release
