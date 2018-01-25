@@ -3,7 +3,7 @@
  + Authors: Christian Koestlin, Christian Köstlin
  + License: MIT
  +/
-module worker.code;
+module wcode;
 
 import std.traits;
 import androidlogger;

@@ -6,6 +6,6 @@
 
 int main(string[] args)
 {
-    import worker.code;
-    return worker.code.workerMain(args);
+    import wcode;
+    return wcode.workerMain(args);
 }
