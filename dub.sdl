@@ -19,7 +19,7 @@ configuration "library" {
 configuration "unittest" {
   targetType "executable"
 
-  dependency "unit-threaded" version="==0.7.36"
+  dependency "unit-threaded" version="~>0.7.36"
   preBuildCommands "dub run unit-threaded -c gen_ut_main -- -f out/generated/unit-threaded/ut.d"
   mainSourceFile "out/generated/unit-threaded/ut.d"
   excludedSourceFiles "source/app.d"
