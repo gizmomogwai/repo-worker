@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Module worker</title>
+		<link rel="stylesheet" type="text/css" href="./styles/ddox.css"/>
+		<link rel="stylesheet" href="./prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="./scripts/jquery.js">/**/</script><script type="text/javascript" src="./scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav">
+			<noscript>
+				<p style="color: red">The search functionality needs JavaScript enabled</p>
+			</noscript>
+			<div id="symbolSearchPane" style="display: none">
+				<form action="#" method="GET">
+					<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+				</form>
+				<ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="./symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "./";
+$('#symbolSearchPane').show();</script>
+			</div>
+			<ul class="tree-view">
+				<li class="tree-view ">
+					<div class="package selected">
+						<a href="./worker.html">worker</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="./worker/packageversion.html">packageversion</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+			</ul>
+		</nav>
+		<div id="main-contents">
+			<h1>Module worker</h1><p></p>
+			<section></section>
+			<section>
+				<h2>Functions</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="calcUploadText" class="public" href="./worker/calcUploadText.html">calcUploadText</a><span class="decoration">(uploadInfos)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="checker" class="public" href="./worker/checker.html">checker</a><span class="decoration">(scheduler, reviewer)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="dirty" class="public" href="./worker/dirty.html">dirty</a><span class="decoration">(output)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="doUploads" class="public" href="./worker/doUploads.html">doUploads</a><span class="decoration">(uploads, dry, topic)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="findGitsByWalking" class="public" href="./worker/findGitsByWalking.html">findGitsByWalking</a><span class="decoration">()</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="findGitsFromManifest" class="public" href="./worker/findGitsFromManifest.html">findGitsFromManifest</a><span class="decoration">()</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="findProjectList" class="public" href="./worker/findProjectList.html">findProjectList</a><span class="decoration">(start)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="getRulingDirectories" class="public" href="./worker/getRulingDirectories.html">getRulingDirectories</a><span class="decoration">(start)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="getTrackingBranches" class="public" href="./worker/getTrackingBranches.html">getTrackingBranches</a><span class="decoration">(project)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="parseTrackingBranches" class="public" href="./worker/parseTrackingBranches.html">parseTrackingBranches</a><span class="decoration">(project, s)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="parseUpload" class="public" href="./worker/parseUpload.html">parseUpload</a><span class="decoration">(base, edit)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="review" class="public" href="./worker/review.html">review</a><span class="decoration">(command)</span>
+							</code>
+						</td>
+						<td>direntries -&gt; queue -&gt; scheduler ----&gt; checker ----&gt; queue -&gt; review
+                                   \--&gt; checker --/
+                                    \-&gt; checker -/
+ checker -&gt; git status
+ review -&gt; magit
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="reviewChanges" class="public" href="./worker/reviewChanges.html">reviewChanges</a><span class="decoration">(work, reviewCommand)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="scheduler" class="public" href="./worker/scheduler.html">scheduler</a><span class="decoration">(nrOfCheckers)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="upload" class="public" href="./worker/upload.html">upload</a><span class="decoration">(work, dry, topic)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="uploadForRepo" class="public" href="./worker/uploadForRepo.html">uploadForRepo</a><span class="decoration">(project)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="worker" class="public" href="./worker/worker.html">worker</a><span class="decoration">(args)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+				</table>
+			</section>
+			<section>
+				<h2>Structs</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="Branch" class="public" href="./worker/Branch.html">Branch</a>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="Command" class="public" href="./worker/Command.html">Command</a>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="Commit" class="public" href="./worker/Commit.html">Commit</a>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="Project" class="public" href="./worker/Project.html">Project</a>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="ReportForDuty" class="public" href="./worker/ReportForDuty.html">ReportForDuty</a>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="Reschedule" class="public" href="./worker/Reschedule.html">Reschedule</a>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="Shutdown" class="public" href="./worker/Shutdown.html">Shutdown</a>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="UploadInfo" class="public" href="./worker/UploadInfo.html">UploadInfo</a>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+				</table>
+			</section>
+			<section>
+				<h2>Enums</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="State" class="public" href="./worker/State.html">State</a>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+				</table>
+			</section>
+			<section>
+				<h2>Aliases</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Type</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a id="Work" class="public" href="./worker/Work.html">
+								<code>Work</code>
+							</a>
+						</td>
+						<td>
+							<code class="prettyprint lang-d"><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">typecons<wbr/></span><span class="pun">.</span><span class="typ">Tuple</span>!(string,"base",worker.Project[],"projects")</code>
+						</td>
+						<td></td>
+					</tr>
+				</table>
+			</section>
+			<footer>
+				<table class="license-info">
+					<tr>
+						<th>Authors</th>
+						<td>
+							<p>Christian Koestlin, Christian Köstlin
+</p>
+
+						</td>
+					</tr>
+					<tr>
+						<th>Copyright</th>
+						<td>
+							<p>Copyright © 2016, Christian Köstlin
+</p>
+
+						</td>
+					</tr>
+					<tr>
+						<th>License</th>
+						<td>
+							<p>MIT
+</p>
+
+						</td>
+					</tr>
+				</table>
+				<p class="faint">Generated using the DDOX documentation generator</p>
+			</footer>
+		</div>
+	</body>
+</html>
