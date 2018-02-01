@@ -5,7 +5,7 @@ copyright "Copyright © 2016, Christian Köstlin"
 license "MIT"
 dependency "d-option" version="~>0.0.7"
 dependency "colored" version="~>0.0.8"
-dependency "androidlogger" version="~>0.0.2"
+dependency "androidlogger" version="~>0.0.5"
 
 configuration "application" {
   targetType "executable"
@@ -20,8 +20,8 @@ configuration "unittest" {
   targetType "executable"
 
   dependency "unit-threaded" version="~>0.7.36"
-  preBuildCommands "dub run unit-threaded -c gen_ut_main -- -f out/generated/unit-threaded/ut.d"
-  mainSourceFile "out/generated/unit-threaded/ut.d"
+  preBuildCommands "dub run unit-threaded -c gen_ut_main -- -f out/generated/unit-threaded/testsuite.d"
+  mainSourceFile "out/generated/unit-threaded/testsuite.d"
   excludedSourceFiles "source/app.d"
 }
 
