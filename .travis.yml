@@ -1,4 +1,7 @@
+﻿%YAML 1.1
+---
 language: d
+d: [dmd, ldc]
 sudo: false
 addons:
   apt:
@@ -9,8 +12,8 @@ before_install:
 - dub fetch packageversion
 script:
 - dub test --compiler=${DC} --coverage
-- dub build --build=release
-- dub build --build=ddox
+- dub build --compiler=${DC} --build=release
+- dub build --compiler=${DC} --build=ddox
 after_success: codecov
 deploy:
   provider: pages
@@ -19,7 +22,7 @@ deploy:
   github-token: "$GH_REPO_TOKEN"
   verbose: true
   keep-history: true
-  on:
+  true:
     branch: master
 env:
   global:

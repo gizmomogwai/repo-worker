@@ -1,6 +1,6 @@
 /++
  + Copyright: Copyright © 2016, Christian Köstlin
- + Authors: Christian Koestlin, Christian Köstlin
+ + Authors: Christian Koestlin
  + License: MIT
  +/
 module worker;
@@ -633,8 +633,9 @@ int worker(string[] args)
     if (help.helpWanted)
     {
         import worker.packageversion;
-        defaultGetoptPrinter("worker %s [options] review/upload\nWorks with trees of gits either by searching for git repositories, or using information in a https://code.google.com/p/git-repo manifest folder.\nOptions:".format(worker.packageversion.PACKAGE_VERSION),
-                help.options);
+
+        defaultGetoptPrinter("worker %s [options] review/upload\nWorks with trees of gits either by searching for git repositories, or using information in a https://code.google.com/p/git-repo manifest folder.\nOptions:"
+                .format(worker.packageversion.PACKAGE_VERSION), help.options);
         return 0;
     }
 

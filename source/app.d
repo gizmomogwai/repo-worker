@@ -7,5 +7,6 @@
 int main(string[] args)
 {
     import worker;
+
     return worker.worker(args);
 }
