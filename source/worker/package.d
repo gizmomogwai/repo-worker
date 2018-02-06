@@ -632,10 +632,11 @@ int worker(string[] args)
     // dfmt on
     if (help.helpWanted)
     {
-        import worker.packageversion;
-
-        defaultGetoptPrinter("worker %s [options] review/upload\nWorks with trees of gits either by searching for git repositories, or using information in a https://code.google.com/p/git-repo manifest folder.\nOptions:"
-                .format(worker.packageversion.PACKAGE_VERSION), help.options);
+        defaultGetoptPrinter("worker [options] review/upload\nWorks with trees of gits either by searching for git repositories, or using information in a https://code.google.com/p/git-repo manifest folder.\nOptions:", help.options);
+        import asciitable;
+        import packageversion;
+        auto table = packageversion.getPackages.keys.sort.fold!((table, key) => table.add(key, packageversion.getPackages[key]))(AsciiTable(0, 0));
+        "Versions:\n%s".format(table.toString("   ", " ")).writeln;
         return 0;
     }
 

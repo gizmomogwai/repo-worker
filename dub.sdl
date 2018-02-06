@@ -3,23 +3,30 @@ description "A minimal D application."
 authors "Christian Köstlin"
 copyright "Copyright © 2016, Christian Köstlin"
 license "MIT"
+
+dependency "packageversion" version="~>0.0.12"
+subConfiguration "packageversion" "library"
 dependency "d-option" version="~>0.0.7"
-dependency "colored" version="~>0.0.8"
-dependency "androidlogger" version="~>0.0.5"
+dependency "androidlogger" version="~>0.0.6"
+dependency "asciitable" version="~>0.0.2"
 
 configuration "application" {
   targetType "executable"
+  targetPath "out/main"
 }
 
 configuration "library" {
   targetType "library"
+  targetPath "out/lib"
+
   excludedSourceFiles "source/app.d"
 }
 
 configuration "unittest" {
   targetType "executable"
+  targetPath "out/test"
 
-  dependency "unit-threaded" version="~>0.7.36"
+  dependency "unit-threaded" version="~>0.7.38"
   preBuildCommands "dub run unit-threaded -c gen_ut_main -- -f out/generated/unit-threaded/testsuite.d"
   mainSourceFile "out/generated/unit-threaded/testsuite.d"
   excludedSourceFiles "source/app.d"
