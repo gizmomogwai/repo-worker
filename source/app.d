@@ -6,7 +6,7 @@
 
 int main(string[] args)
 {
-    import worker;
+    import worker : worker_;
 
-    return worker.worker(args);
+    return worker_(args);
 }

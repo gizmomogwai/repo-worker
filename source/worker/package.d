@@ -5,12 +5,14 @@
  +/
 module worker;
 
-import std.traits;
+public import worker.packageversion;
+
 import androidlogger;
 import option;
-import std.algorithm.iteration;
+import unit;
 import std.algorithm;
 import std.concurrency;
+import std.datetime.stopwatch;
 import std.experimental.logger;
 import std.file;
 import std.getopt;
@@ -21,6 +23,7 @@ import std.range;
 import std.regex;
 import std.stdio;
 import std.string;
+import std.traits;
 import std.typecons;
 
 struct Shutdown
@@ -581,6 +584,38 @@ void upload(T)(T work, bool dry, string topic)
     doUploads(toUpload, dry, topic);
 }
 
+void executeCommand(T)(T work, string command)
+{
+    auto status = 0;
+    foreach (project; work.projects.sort!("a.base < b.base"))
+    {
+        LogLevel.warning.log("Running %s in %s".format(command, project.path.asNormalizedPath));
+        auto sw = StopWatch(AutoStart.yes);
+        auto res = command.executeShell(null, Config.none, size_t.max, project.path);
+        if (res.status != 0)
+        {
+            status = res.status;
+        }
+        auto duration = sw.peek();
+        auto d = duration.total!("msecs");
+        // dfmt off
+        auto description = "Finished with %s in %s"
+            .format(res.status,
+                TIME
+                    .transform(d)
+                    .onlyRelevant
+                    .map!(p => "%s%s".format(p.value, p.name))
+                    .join(" "));
+        // dfmt on
+        auto output = std.string.strip(res.output);
+        LogLevel.warning.log(description);
+        if (output != null)
+        {
+            (res.status == 0 ? LogLevel.info : LogLevel.error).log(output);
+        }
+    }
+}
+
 void reviewChanges(T)(T work, string reviewCommand)
 {
     int nrOfCheckers = std.parallelism.totalCPUs;
@@ -607,9 +642,10 @@ void reviewChanges(T)(T work, string reviewCommand)
     reviewer.send(Shutdown());
 }
 
-int worker(string[] args)
+int worker_(string[] args)
 {
     string reviewCommand = "magit %s";
+    string executeCommand = "git status";
     bool walk = false;
     bool dry = false;
     bool withColors = true;
@@ -622,6 +658,7 @@ int worker(string[] args)
                        "topic|t", "add gerrit topic.", &topic,
                        "dry|d", "dry run.", &dry,
                        "colors|c", "colorful output.", &withColors,
+                       "execute|e", "execute command on all repos.", &executeCommand,
                        "reviewCommand|r", q"[
     Command to run for reviewing changes. %s is replaced by the working directory.
     examples include:
@@ -632,18 +669,17 @@ int worker(string[] args)
     // dfmt on
     if (help.helpWanted)
     {
-        defaultGetoptPrinter("worker [options] review/upload\nWorks with trees of gits either by searching for git repositories, or using information in a https://code.google.com/p/git-repo manifest folder.\nOptions:",
+        defaultGetoptPrinter("worker [options] review/upload/run\nWorks with trees of gits either by searching for git repositories, or using information in a https://code.google.com/p/git-repo manifest folder.\nOptions:",
                 help.options);
         // dfmt off
         import asciitable;
         import packageversion;
         auto table = packageversion
             .getPackages
-            .keys
-            .sort
-            .fold!((table, key) => table.add(key, packageversion.getPackages[key]))(AsciiTable(0, 0));
+            .sort!"a.name < b.name"
+            .fold!((table, p) => table.add(p.name, p.semVer, p.license))(AsciiTable(0, 0, 0));
         // dfmt on
-        "Versions:\n%s".format(table.toString("   ", " ")).writeln;
+        "Packages:\n%s".format(table.toString("   ", " ")).writeln;
         return 0;
     }
 
@@ -657,17 +693,20 @@ int worker(string[] args)
     auto projects = walk ? findGitsByWalking() : findGitsFromManifest();
 
     auto command = args[1];
-    if (command == "upload")
+    switch (command)
     {
+    case "upload":
         projects.upload(dry, topic);
-        return 0;
-    }
-
-    if (command == "review")
-    {
+        break;
+    case "review":
         projects.reviewChanges(reviewCommand);
+        break;
+    case "run":
+        projects.executeCommand(executeCommand);
+        break;
+    default:
+        break;
     }
-
     return 0;
 }
 

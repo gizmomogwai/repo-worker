@@ -1,12 +1,13 @@
 {
 	"fileVersion": 1,
 	"versions": {
-		"androidlogger": "0.0.6",
-		"asciitable": "0.0.2+commit.4.gb6a99a6",
-		"colored": "0.0.10",
+		"androidlogger": "0.0.7",
+		"asciitable": "0.0.3",
+		"colored": "0.0.11",
 		"colorize": "1.0.5",
 		"d-option": "0.0.7",
-		"packageversion": "0.0.12",
+		"dime": "0.0.3",
+		"packageversion": "0.0.15",
 		"unit-threaded": "0.7.38"
 	}
 }
