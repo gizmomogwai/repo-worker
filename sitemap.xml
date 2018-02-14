@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 <url><loc>http://127.0.0.1/index.html</loc></url>
-<url><loc>http://127.0.0.1/androidlogger/packageversion.html</loc></url>
-<url><loc>http://127.0.0.1/androidlogger/packageversion/PACKAGE_VERSION.html</loc></url>
 <url><loc>http://127.0.0.1/worker/packageversion.html</loc></url>
-<url><loc>http://127.0.0.1/worker/packageversion/PACKAGE_VERSION.html</loc></url>
+<url><loc>http://127.0.0.1/worker/packageversion/LICENSE.html</loc></url>
+<url><loc>http://127.0.0.1/worker/packageversion/NAME.html</loc></url>
+<url><loc>http://127.0.0.1/worker/packageversion/VERSION.html</loc></url>
 <url><loc>http://127.0.0.1/worker.html</loc></url>
 <url><loc>http://127.0.0.1/worker/Branch.html</loc></url>
 <url><loc>http://127.0.0.1/worker/Branch.getUploadInfo.html</loc></url>
@@ -31,6 +31,7 @@
 <url><loc>http://127.0.0.1/worker/Commit.this.html</loc></url>
 <url><loc>http://127.0.0.1/worker/dirty.html</loc></url>
 <url><loc>http://127.0.0.1/worker/doUploads.html</loc></url>
+<url><loc>http://127.0.0.1/worker/executeCommand.html</loc></url>
 <url><loc>http://127.0.0.1/worker/findGitsByWalking.html</loc></url>
 <url><loc>http://127.0.0.1/worker/findGitsFromManifest.html</loc></url>
 <url><loc>http://127.0.0.1/worker/findProjectList.html</loc></url>
@@ -59,5 +60,5 @@
 <url><loc>http://127.0.0.1/worker/UploadInfo.this.html</loc></url>
 <url><loc>http://127.0.0.1/worker/UploadInfo.this.html</loc></url>
 <url><loc>http://127.0.0.1/worker/Work.html</loc></url>
-<url><loc>http://127.0.0.1/worker/worker.html</loc></url>
+<url><loc>http://127.0.0.1/worker/worker_.html</loc></url>
 </urlset>
