@@ -1,4 +1,5 @@
-* repo-worker [[https://github.com/gizmomogwai/repo-worker][https://img.shields.io/github/tag/gizmomogwai/repo-worker.svg?style=flat-square]] [[https://travis-ci.org/gizmomogwai/repo-worker][https://img.shields.io/travis/gizmomogwai/repo-worker/master.svg?style=flat-square]] [[https://codecov.io/gh/gizmomogwai/repo-worker][https://img.shields.io/codecov/c/github/gizmomogwai/repo-worker/master.svg?style=flat-square]] [[https://gizmomogwai.github.io/repo-worker][https://img.shields.io/readthedocs/pip.svg?style=flat-square]]
+* repo-worker
+[[https://github.com/gizmomogwai/repo-worker][https://img.shields.io/github/tag/gizmomogwai/repo-worker.svg?style=flat-square]] [[https://travis-ci.org/gizmomogwai/repo-worker][https://img.shields.io/travis/gizmomogwai/repo-worker/master.svg?style=flat-square]] [[https://codecov.io/gh/gizmomogwai/repo-worker][https://img.shields.io/codecov/c/github/gizmomogwai/repo-worker/master.svg?style=flat-square]] [[https://gizmomogwai.github.io/repo-worker][https://img.shields.io/readthedocs/pip.svg?style=flat-square]]
 
 ** Introduction
 works your dirty [[https://code.google.com/p/git-repo/][repo]] git repositories with [[https://github.com/gizmomogwai/magit][magit]].
