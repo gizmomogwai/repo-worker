@@ -10,7 +10,7 @@ dependency "asciitable" version="~>0.0.3"
 dependency "dime" version="~>0.0.3"
 
 x:ddoxFilterArgs "--min-protection=Private"
-preBuildCommands "dub run packageversion -- --packageName=worker"
+preBuildCommands "packageversion --packageName=worker || dub run packageversion -- --packageName=worker"
 sourceFiles "out/generated/packageversion/worker/packageversion.d"
 sourcePaths "source" "out/generated/packageversion"
 importPaths "source" "out/generated/packageversion"
