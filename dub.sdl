@@ -3,19 +3,18 @@ description "A minimal D application."
 authors "Christian Köstlin"
 copyright "Copyright © 2016, Christian Köstlin"
 license "MIT"
+x:ddoxFilterArgs "--min-protection=Private"
 
 dependency "d-option" version="~>0.0.7"
 dependency "androidlogger" version="~>0.0.8"
 dependency "asciitable" version="~>0.0.3"
 dependency "dime" version="~>0.0.3"
 
-x:ddoxFilterArgs "--min-protection=Private"
 preGenerateCommands "packageversion || dub run packageversion"
 sourcePaths "source" "out/generated/packageversion"
 importPaths "source" "out/generated/packageversion"
 
 dependency "packageversion" version="~>0.0.15"
-subConfiguration "packageversion" "library"
 
 configuration "application" {
   targetType "executable"
