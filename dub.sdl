@@ -6,15 +6,16 @@ license "MIT"
 x:ddoxFilterArgs "--min-protection=Private"
 
 dependency "d-option" version="~>0.0.7"
-dependency "androidlogger" version="~>0.0.8"
-dependency "asciitable" version="~>0.0.3"
-dependency "dime" version="~>0.0.3"
+dependency "androidlogger" version="~>0.0.13"
+dependency "asciitable" version="~>0.0.9"
+dependency "dime" version="~>0.0.5"
 
 preGenerateCommands "packageversion || dub run packageversion"
+sourceFiles "out/generated/packageversion/worker/packageversion.d"
 sourcePaths "source" "out/generated/packageversion"
 importPaths "source" "out/generated/packageversion"
 
-dependency "packageversion" version="~>0.0.15"
+dependency "packageversion" version="~>0.0.18"
 
 configuration "application" {
   targetType "executable"
@@ -32,7 +33,7 @@ configuration "unittest" {
   targetType "executable"
   targetPath "out/test"
 
-  dependency "unit-threaded" version="~>0.7.38"
+  dependency "unit-threaded" version="~>0.8.0"
   preBuildCommands "dub run unit-threaded -c gen_ut_main -- -f out/generated/unit-threaded/testsuite.d"
   mainSourceFile "out/generated/unit-threaded/testsuite.d"
   excludedSourceFiles "source/app.d"

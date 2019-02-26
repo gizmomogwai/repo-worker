@@ -671,19 +671,22 @@ int worker_(string[] args)
     {
         defaultGetoptPrinter("worker [options] review/upload/run\nWorks with trees of gits either by searching for git repositories, or using information in a https://code.google.com/p/git-repo manifest folder.\nOptions:",
                 help.options);
-        // dfmt off
         import asciitable;
         import packageversion;
+        import colored;
+        import std.conv;
+        // dfmt off
         auto table = packageversion
             .getPackages
-            .sort!"a.name < b.name"
-            .fold!((table, p) => table.add(p.name, p.semVer, p.license))(AsciiTable(0, 0, 0));
+            .sort!("a.name < b.name")
+            .fold!((table, p) => table.row.add(p.name.white).add(p.semVer.lightGray).add(p.license.lightGray).table)
+            (new AsciiTable(3).header.add("Package".bold).add("Version".bold).add("License".bold).table);
         // dfmt on
-        "Packages:\n%s".format(table.toString("   ", " ")).writeln;
+        stderr.writeln("Packageinfo:\n", table.format.prefix("  | ").headerSeparator(true).columnSeparator(true).to!string);
         return 0;
     }
 
-    sharedLog = new AndroidLogger(withColors, loglevel);
+    sharedLog = new AndroidLogger(stderr, withColors, loglevel);
 
     if (args.length != 2)
     {
