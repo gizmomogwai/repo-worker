@@ -1,7 +1,7 @@
 name "worker"
 description "A minimal D application."
-authors "Christian Köstlin"
-copyright "Copyright © 2016, Christian Köstlin"
+authors "Christian Koestlin"
+copyright "Copyright (c) 2016, Christian Koestlin"
 license "MIT"
 x:ddoxFilterArgs "--min-protection=Private"
 
