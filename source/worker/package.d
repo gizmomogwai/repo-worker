@@ -578,7 +578,11 @@ void upload(T)(T work, bool dry, string topic)
         remove(fileName);
     }
 
-    auto edit = execute([environment.get("EDITOR", "vi"), "/tmp/worker_upload.txt"]);
+    auto edit = [environment.get("EDITOR", "vi"), "/tmp/worker_upload.txt"].spawnProcess.wait;
+    if (edit != 0) {
+        return;
+    }
+
     string editContent = readText(fileName);
     auto toUpload = parseUpload(work.base, editContent);
     doUploads(toUpload, dry, topic);
@@ -690,7 +694,7 @@ int worker_(string[] args)
 
     if (args.length != 2)
     {
-        throw new Exception("please specify action review/upload");
+        throw new Exception("please specify action review/upload/run");
     }
 
     auto projects = walk ? findGitsByWalking() : findGitsFromManifest();
