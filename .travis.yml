@@ -1,7 +1,7 @@
-﻿%YAML 1.1
----
 language: d
-d: [dmd, ldc]
+d:
+- dmd
+- ldc
 sudo: false
 addons:
   apt:
@@ -22,8 +22,8 @@ deploy:
   github-token: "$GH_REPO_TOKEN"
   verbose: true
   keep-history: true
-  true:
+  on:
     branch: master
 env:
   global:
-  - secure: xTnAn8n5lCOEWvCIMpfigFFthqWk9Gz/ie5UVf8QN3+PxBwq/LRB8Qnj+09t69jeV6rILIy5v6mJZTLW4WpdeZfURV5oH7fMSUQcAq4RK0b3iPn01NM1PvZQbcTizmih7U1v+C5od8UC8d6eDtHjZ7UtjXoj61yLuFyaNNz1RS0ZSe3oHJ+r8o6LgUzpQ4Fl1vT2ev6KMc5AWtfs/aFrc0OxWaBfmCt9N58MqF7A7D9k2nGzhYk4lwSy1P/L0fAmJ/+b128SAhWFv6Oxdvfm93fv2P+4G5OX208VBb2Mxc2L7T46WanmEF5N35x3MZ89Sn5dgKb51T0ZDT9B4u7Hz9uUj0wHvDYGM55sfh96iJ8YSWaFe7f4sjXGcW1x1EZBtt1kwQ0jBjEYa8T7mQuwwndpltFHdzDJAbgRUIm4i2Sqv3KqgHkoXyDb8VdwFnx49H7mbRg2NZ/rJ6L9slt18FzvZhR9Nri2FoUVaDv7aGUfCUqi33XL74FhweJniCCrTrzqlevFZa9szmBbSczlYrtKJ+NGchwBQWpw0eJ5kGkNjj0oeesXAt5ATAP3VtOG3rfwbkulXQ54f4kpUNJwoJ/z0MI8lZYdwRvrwkL4WKdO5Jco9RxzKFGBUhoq/YescQbruWH8LIF2dqTMhmlmiV7CuCRnUWL6yx0UfASsD5U=
+    secure: reYM++hAVh1SO6nMdwGsgFf72KjkarSaGl2rgFDQez/lnVmb81qHONaJDhYezVOINx/76S/clK+XUH99gCKDfPM9n+8ElhRdxpxBZaz15AI5HDJkOqFw20VHZ9QVCVND1T/S95AO3irXmXbdh/MOBVbdK9ZSyFloLNqa2wqt1Zya6tlCtBWKh+MI8/Y17NdkGNNNtyONk1syXXxLBR6p28m7u9zaJAQ/7p8owZEOyzD7D4i4nllxZ5d0TNZA2EnBooKJ4XA/xQ4b4I012eJ3N053Uwn5ZAi9FM9/63V+xz/dCTOuFsdp69sYyuHWcaBN8GmMf2ZxjL/XWFh1264dVUg6r557S37Wx49D/T+sdFvuWhKv+++a2m8wVuPqqsiEt3d2w+qmnejmXOuUUfSOI4OfFn93XnKLgf38WKTTJZBKDck094fXA8wwVrjbOpGe16sartEBFAb40yRo75tOXgSGTv+rPjP2Rq3oIknJS2v3ZJ2hpKUdbYifs1Mkym9GzlcDH3tSjq5Giex9IMNLQ4S+Uw5cFMLXmtfHSv8nbFbs1crfi8jvd8TQumUd1e2UW4dKXHC27Uk3wmpDkEgVSZ7UBjJwvQxSsIYdhXKP7QfobPD65JPsi712uyY9ti7oH0VvDEX/tQ1QTI5oXhhM8XJPu0ASAjGs4Z91lnwFj/A=
