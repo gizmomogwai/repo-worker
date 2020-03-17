@@ -12,6 +12,7 @@ import option;
 import unit;
 import std.algorithm;
 import std.concurrency;
+import std.conv;
 import std.datetime.stopwatch;
 import std.experimental.logger;
 import std.file;
@@ -457,16 +458,51 @@ auto parseUpload(string base, string edit)
     res[0].commits[0].sha1.shouldEqual("123456");
 }
 
-void doUploads(T)(T uploads, bool dry, string topic)
+auto asGerritRequest(ChangeSetType changeSetType) {
+    switch (changeSetType) {
+    case ChangeSetType.NORMAL:
+        return "";
+    case ChangeSetType.WIP:
+        return "%wip";
+    case ChangeSetType.PRIVATE:
+        return "%private";
+    case ChangeSetType.DRAFT:
+        return "";
+    default:
+        throw new Exception("nyi for " ~ changeSetType.to!string);
+    }
+}
+
+void doUploads(T)(T uploads, bool dry, string topic, string hashtag, ChangeSetType changeSetType)
 {
     foreach (upload; uploads)
     {
         info(upload);
-        auto topicParameter = topic == null ? "" : "%%topic=%s".format(topic);
-        upload.branch.project.git("push", upload.branch.remote,
-                "%s:refs/for/%s%s".format(upload.commits[0].sha1,
-                    upload.branch.remoteBranch, topicParameter)).dry(dry)
-            .message("PushingUpstream").run();
+        auto args =
+            [
+              "push",
+              upload.branch.remote,
+              "%s:refs/%s/%s%s".format(
+                upload.commits[0].sha1,
+                changeSetType == ChangeSetType.DRAFT ? "drafts" : "for",
+                upload.branch.remoteBranch,
+                changeSetType.asGerritRequest)
+            ];
+        if (topic != null) {
+            args ~= "-o";
+            args ~= "topic=%s".format(topic);
+        }
+
+        if (hashtag != null) {
+            args ~= "-o";
+            args ~= "t=%s".format(hashtag);
+        }
+
+        upload.branch.project
+            .git(args)
+            .dry(dry)
+            .message("PushingUpstream")
+            .run();
     }
 }
 
@@ -554,7 +590,7 @@ auto findGitsFromManifest()
             "%s/%s".format(manifestDir, ".repo/manifests"))]).array);
 }
 
-void upload(T)(T work, bool dry, string topic)
+void upload(T)(T work, bool dry, string topic, string hashtag, ChangeSetType changeSetType)
 {
     auto summary = work.projects.map!(i => uploadForRepo(i)).filter!(i => i.length > 0)
         .join(
@@ -565,8 +601,9 @@ void upload(T)(T work, bool dry, string topic)
         return;
     }
     auto topicMessage = topic == null ? "" : "\n# Topic: %s".format(topic);
+    auto hashtagMessage = hashtag == null ? "" : "\n# Hashtag: %s".format(hashtag);
     auto sep = "# ================================================================================";
-    summary = "# Workspace: %s%s\n%s\n".format(work.base, topicMessage, sep) ~ summary;
+    summary = "# Workspace: %s%s%s\n# ChangeSetType: %s\n%s\n".format(work.base, topicMessage, hashtagMessage, changeSetType.to!string, sep) ~ summary;
 
     auto fileName = "/tmp/worker_upload.txt";
     auto file = File(fileName, "w");
@@ -585,7 +622,7 @@ void upload(T)(T work, bool dry, string topic)
 
     string editContent = readText(fileName);
     auto toUpload = parseUpload(work.base, editContent);
-    doUploads(toUpload, dry, topic);
+    doUploads(toUpload, dry, topic, hashtag, changeSetType);
 }
 
 void executeCommand(T)(T work, string command)
@@ -646,6 +683,13 @@ void reviewChanges(T)(T work, string reviewCommand)
     reviewer.send(Shutdown());
 }
 
+enum ChangeSetType {
+    NORMAL,
+    WIP,
+    PRIVATE,
+    DRAFT
+}
+
 int worker_(string[] args)
 {
     string reviewCommand = "magit %s";
@@ -653,13 +697,17 @@ int worker_(string[] args)
     bool walk = false;
     bool dry = false;
     bool withColors = true;
+    auto changeSetType = ChangeSetType.NORMAL;
     string topic;
+    string hashtag;
     LogLevel loglevel;
     // dfmt off
     auto help = getopt(args,
                        "walk|w", "Walk directories and search for .git repositories instead of using repo.", &walk,
                        "loglevel|l", "Output diagnostic information (%s).".format([EnumMembers!LogLevel].map!("a.to!string").join(", ")), &loglevel,
                        "topic|t", "add gerrit topic.", &topic,
+                       "hashtag|h", "add hashtag to changeset.", &hashtag,
+                       "changeSetType", "specify the type of changeset (%s).".format([EnumMembers!ChangeSetType].map!("a.to!string").join(", ")), &changeSetType,
                        "dry|d", "dry run.", &dry,
                        "colors|c", "colorful output.", &withColors,
                        "execute|e", "execute command on all repos.", &executeCommand,
@@ -678,7 +726,6 @@ int worker_(string[] args)
         import asciitable;
         import packageversion;
         import colored;
-        import std.conv;
         // dfmt off
         auto table = packageversion
             .getPackages
@@ -703,7 +750,7 @@ int worker_(string[] args)
     switch (command)
     {
     case "upload":
-        projects.upload(dry, topic);
+        projects.upload(dry, topic, hashtag, changeSetType);
         break;
     case "review":
         projects.reviewChanges(reviewCommand);
