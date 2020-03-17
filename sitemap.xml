@@ -6,6 +6,7 @@
 <url><loc>http://127.0.0.1/worker/packageversion/NAME.html</loc></url>
 <url><loc>http://127.0.0.1/worker/packageversion/VERSION.html</loc></url>
 <url><loc>http://127.0.0.1/worker.html</loc></url>
+<url><loc>http://127.0.0.1/worker/asGerritRequest.html</loc></url>
 <url><loc>http://127.0.0.1/worker/Branch.html</loc></url>
 <url><loc>http://127.0.0.1/worker/Branch.getUploadInfo.html</loc></url>
 <url><loc>http://127.0.0.1/worker/Branch.localBranch.html</loc></url>
@@ -14,6 +15,7 @@
 <url><loc>http://127.0.0.1/worker/Branch.remoteBranch.html</loc></url>
 <url><loc>http://127.0.0.1/worker/Branch.this.html</loc></url>
 <url><loc>http://127.0.0.1/worker/calcUploadText.html</loc></url>
+<url><loc>http://127.0.0.1/worker/ChangeSetType.html</loc></url>
 <url><loc>http://127.0.0.1/worker/checker.html</loc></url>
 <url><loc>http://127.0.0.1/worker/Command.html</loc></url>
 <url><loc>http://127.0.0.1/worker/Command.command_.html</loc></url>

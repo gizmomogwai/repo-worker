@@ -47,7 +47,7 @@ $('#symbolSearchPane').show();</script>
 					<tr>
 						<td>
 							<code>
-								<a id="calcUploadText" class="public" href="./worker/calcUploadText.html">calcUploadText</a><span class="decoration">(uploadInfos)</span>
+								<a id="asGerritRequest" class="public" href="./worker/asGerritRequest.html">asGerritRequest</a><span class="tableEntryAnnotation">(changeSetType)</span>
 							</code>
 						</td>
 						<td></td>
@@ -55,7 +55,7 @@ $('#symbolSearchPane').show();</script>
 					<tr>
 						<td>
 							<code>
-								<a id="checker" class="public" href="./worker/checker.html">checker</a><span class="decoration">(scheduler, reviewer)</span>
+								<a id="calcUploadText" class="public" href="./worker/calcUploadText.html">calcUploadText</a><span class="tableEntryAnnotation">(uploadInfos)</span>
 							</code>
 						</td>
 						<td></td>
@@ -63,7 +63,7 @@ $('#symbolSearchPane').show();</script>
 					<tr>
 						<td>
 							<code>
-								<a id="dirty" class="public" href="./worker/dirty.html">dirty</a><span class="decoration">(output)</span>
+								<a id="checker" class="public" href="./worker/checker.html">checker</a><span class="tableEntryAnnotation">(scheduler, reviewer)</span>
 							</code>
 						</td>
 						<td></td>
@@ -71,7 +71,7 @@ $('#symbolSearchPane').show();</script>
 					<tr>
 						<td>
 							<code>
-								<a id="doUploads" class="public" href="./worker/doUploads.html">doUploads</a><span class="decoration">(uploads, dry, topic)</span>
+								<a id="dirty" class="public" href="./worker/dirty.html">dirty</a><span class="tableEntryAnnotation">(output)</span>
 							</code>
 						</td>
 						<td></td>
@@ -79,7 +79,7 @@ $('#symbolSearchPane').show();</script>
 					<tr>
 						<td>
 							<code>
-								<a id="executeCommand" class="public" href="./worker/executeCommand.html">executeCommand</a><span class="decoration">(work, command)</span>
+								<a id="doUploads" class="public" href="./worker/doUploads.html">doUploads</a><span class="tableEntryAnnotation">(uploads, dry, topic, hashtag, changeSetType)</span>
 							</code>
 						</td>
 						<td></td>
@@ -87,7 +87,7 @@ $('#symbolSearchPane').show();</script>
 					<tr>
 						<td>
 							<code>
-								<a id="findGitsByWalking" class="public" href="./worker/findGitsByWalking.html">findGitsByWalking</a><span class="decoration">()</span>
+								<a id="executeCommand" class="public" href="./worker/executeCommand.html">executeCommand</a><span class="tableEntryAnnotation">(work, command)</span>
 							</code>
 						</td>
 						<td></td>
@@ -95,7 +95,7 @@ $('#symbolSearchPane').show();</script>
 					<tr>
 						<td>
 							<code>
-								<a id="findGitsFromManifest" class="public" href="./worker/findGitsFromManifest.html">findGitsFromManifest</a><span class="decoration">()</span>
+								<a id="findGitsByWalking" class="public" href="./worker/findGitsByWalking.html">findGitsByWalking</a><span class="tableEntryAnnotation">()</span>
 							</code>
 						</td>
 						<td></td>
@@ -103,7 +103,7 @@ $('#symbolSearchPane').show();</script>
 					<tr>
 						<td>
 							<code>
-								<a id="findProjectList" class="public" href="./worker/findProjectList.html">findProjectList</a><span class="decoration">(start)</span>
+								<a id="findGitsFromManifest" class="public" href="./worker/findGitsFromManifest.html">findGitsFromManifest</a><span class="tableEntryAnnotation">()</span>
 							</code>
 						</td>
 						<td></td>
@@ -111,7 +111,7 @@ $('#symbolSearchPane').show();</script>
 					<tr>
 						<td>
 							<code>
-								<a id="getRulingDirectories" class="public" href="./worker/getRulingDirectories.html">getRulingDirectories</a><span class="decoration">(start)</span>
+								<a id="findProjectList" class="public" href="./worker/findProjectList.html">findProjectList</a><span class="tableEntryAnnotation">(start)</span>
 							</code>
 						</td>
 						<td></td>
@@ -119,7 +119,7 @@ $('#symbolSearchPane').show();</script>
 					<tr>
 						<td>
 							<code>
-								<a id="getTrackingBranches" class="public" href="./worker/getTrackingBranches.html">getTrackingBranches</a><span class="decoration">(project)</span>
+								<a id="getRulingDirectories" class="public" href="./worker/getRulingDirectories.html">getRulingDirectories</a><span class="tableEntryAnnotation">(start)</span>
 							</code>
 						</td>
 						<td></td>
@@ -127,7 +127,7 @@ $('#symbolSearchPane').show();</script>
 					<tr>
 						<td>
 							<code>
-								<a id="parseTrackingBranches" class="public" href="./worker/parseTrackingBranches.html">parseTrackingBranches</a><span class="decoration">(project, s)</span>
+								<a id="getTrackingBranches" class="public" href="./worker/getTrackingBranches.html">getTrackingBranches</a><span class="tableEntryAnnotation">(project)</span>
 							</code>
 						</td>
 						<td></td>
@@ -135,7 +135,7 @@ $('#symbolSearchPane').show();</script>
 					<tr>
 						<td>
 							<code>
-								<a id="parseUpload" class="public" href="./worker/parseUpload.html">parseUpload</a><span class="decoration">(base, edit)</span>
+								<a id="parseTrackingBranches" class="public" href="./worker/parseTrackingBranches.html">parseTrackingBranches</a><span class="tableEntryAnnotation">(project, s)</span>
 							</code>
 						</td>
 						<td></td>
@@ -143,7 +143,15 @@ $('#symbolSearchPane').show();</script>
 					<tr>
 						<td>
 							<code>
-								<a id="review" class="public" href="./worker/review.html">review</a><span class="decoration">(command)</span>
+								<a id="parseUpload" class="public" href="./worker/parseUpload.html">parseUpload</a><span class="tableEntryAnnotation">(base, edit)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="review" class="public" href="./worker/review.html">review</a><span class="tableEntryAnnotation">(command)</span>
 							</code>
 						</td>
 						<td>direntries -&gt; queue -&gt; scheduler ----&gt; checker ----&gt; queue -&gt; review
@@ -156,7 +164,7 @@ $('#symbolSearchPane').show();</script>
 					<tr>
 						<td>
 							<code>
-								<a id="reviewChanges" class="public" href="./worker/reviewChanges.html">reviewChanges</a><span class="decoration">(work, reviewCommand)</span>
+								<a id="reviewChanges" class="public" href="./worker/reviewChanges.html">reviewChanges</a><span class="tableEntryAnnotation">(work, reviewCommand)</span>
 							</code>
 						</td>
 						<td></td>
@@ -164,7 +172,7 @@ $('#symbolSearchPane').show();</script>
 					<tr>
 						<td>
 							<code>
-								<a id="scheduler" class="public" href="./worker/scheduler.html">scheduler</a><span class="decoration">(nrOfCheckers)</span>
+								<a id="scheduler" class="public" href="./worker/scheduler.html">scheduler</a><span class="tableEntryAnnotation">(nrOfCheckers)</span>
 							</code>
 						</td>
 						<td></td>
@@ -172,7 +180,7 @@ $('#symbolSearchPane').show();</script>
 					<tr>
 						<td>
 							<code>
-								<a id="upload" class="public" href="./worker/upload.html">upload</a><span class="decoration">(work, dry, topic)</span>
+								<a id="upload" class="public" href="./worker/upload.html">upload</a><span class="tableEntryAnnotation">(work, dry, topic, hashtag, changeSetType)</span>
 							</code>
 						</td>
 						<td></td>
@@ -180,7 +188,7 @@ $('#symbolSearchPane').show();</script>
 					<tr>
 						<td>
 							<code>
-								<a id="uploadForRepo" class="public" href="./worker/uploadForRepo.html">uploadForRepo</a><span class="decoration">(project)</span>
+								<a id="uploadForRepo" class="public" href="./worker/uploadForRepo.html">uploadForRepo</a><span class="tableEntryAnnotation">(project)</span>
 							</code>
 						</td>
 						<td></td>
@@ -188,7 +196,7 @@ $('#symbolSearchPane').show();</script>
 					<tr>
 						<td>
 							<code>
-								<a id="worker_" class="public" href="./worker/worker_.html">worker_</a><span class="decoration">(args)</span>
+								<a id="worker_" class="public" href="./worker/worker_.html">worker_</a><span class="tableEntryAnnotation">(args)</span>
 							</code>
 						</td>
 						<td></td>
@@ -274,6 +282,14 @@ $('#symbolSearchPane').show();</script>
 					<col class="caption"/>
 					<tr>
 						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="ChangeSetType" class="public" href="./worker/ChangeSetType.html">ChangeSetType</a>
+							</code>
+						</td>
+						<td></td>
 					</tr>
 					<tr>
 						<td>

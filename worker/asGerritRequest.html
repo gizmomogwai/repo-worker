@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="UTF-8"/>
-		<title>Function findGitsFromManifest</title>
+		<title>Function asGerritRequest</title>
 		<link rel="stylesheet" type="text/css" href="../styles/ddox.css"/>
 		<link rel="stylesheet" href="../prettify/prettify.css" type="text/css"/>
 		<script type="text/javascript" src="../scripts/jquery.js">/**/</script><script type="text/javascript" src="../scripts/ddox.js">/**/</script>
@@ -35,11 +35,16 @@ $('#symbolSearchPane').show();</script>
 			</ul>
 		</nav>
 		<div id="main-contents">
-			<h1>Function findGitsFromManifest</h1><p></p>
+			<h1>Function asGerritRequest</h1><p></p>
 			<div class="prototype">
 				<code class="lang-d">
 					<div class="single-prototype">
-			<span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">typecons<wbr/></span><span class="pun">.</span><span class="typ">Tuple</span>!(string,"base",worker.Project[],"projects") <span class="pln">findGitsFromManifest</span><span class="pun">(</span><span class="pun">)</span><span class="pun">;</span>
+			<span class="typ">string</span> <span class="pln">asGerritRequest</span>
+			<span class="pun">(</span>
+			<br/>
+			&nbsp;&nbsp;<a href="../worker/ChangeSetType.html"><span class="typ">ChangeSetType</span></a> <span class="pln">changeSetType</span>
+			<br/>
+			<span class="pun">)</span><span class="pln"> </span><span class="kwd">pure @safe</span><span class="pun">;</span>
 					</div>
 				</code>
 			</div>
