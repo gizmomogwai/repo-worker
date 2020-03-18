@@ -498,11 +498,14 @@ void doUploads(T)(T uploads, bool dry, string topic, string hashtag, ChangeSetTy
             args ~= "t=%s".format(hashtag);
         }
 
-        upload.branch.project
+        auto result = upload.branch.project
             .git(args)
             .dry(dry)
             .message("PushingUpstream")
             .run();
+        if (result.isDefined) {
+            info(result.get);
+        }
     }
 }
 
