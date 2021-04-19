@@ -244,13 +244,13 @@ struct Command
 
     auto run()
     {
-        trace("%s: executing %s".format(message_, command_));
+        "%s: executing %s (%s)".format(message_, command_, command_.join(" ")).trace;
 
         if (dry_)
         {
             return None!string();
         }
-        auto res = execute(command_);
+        auto res = command_.execute;
         if (res.status == 0)
         {
             return Some(res.output);
@@ -312,8 +312,9 @@ struct Branch
 
     auto getUploadInfo()
     {
+        auto reference = remoteBranch.find("tags").empty ? "%s/%s".format(remote, remoteBranch) : remoteBranch;
         auto log = project.git("log", "--pretty=oneline", "--abbrev-commit",
-                "%s...%s/%s".format(localBranch, remote, remoteBranch)).message(
+                "%s...%s".format(localBranch, reference)).message(
                 "GetUploadInfo").run();
         return log.map!(o => UploadInfo(this, o));
     }
@@ -633,7 +634,7 @@ void executeCommand(T)(T work, string command)
     auto status = 0;
     foreach (project; work.projects.sort!("a.base < b.base"))
     {
-        LogLevel.warning.log("Running %s in %s".format(command, project.path.asNormalizedPath));
+        "Running %s in %s".format(command, project.path.asNormalizedPath).warning;
         auto sw = StopWatch(AutoStart.yes);
         auto res = command.executeShell(null, Config.none, size_t.max, project.path);
         if (res.status != 0)
@@ -652,7 +653,7 @@ void executeCommand(T)(T work, string command)
                     .join(" "));
         // dfmt on
         auto output = std.string.strip(res.output);
-        LogLevel.warning.log(description);
+        description.warning;
         if (output != null)
         {
             (res.status == 0 ? LogLevel.info : LogLevel.error).log(output);
