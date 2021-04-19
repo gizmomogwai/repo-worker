@@ -743,27 +743,31 @@ int worker_(string[] args)
 
     sharedLog = new AndroidLogger(stderr, withColors, loglevel);
 
+    auto actions = "re(view)/ru(n)/u(pload)";
     if (args.length != 2)
     {
-        throw new Exception("please specify action review/upload/run");
+        throw new Exception("please specify action %s".format(actions));
     }
 
     auto projects = walk ? findGitsByWalking() : findGitsFromManifest();
 
-    auto command = args[1];
-    switch (command)
+    auto action = args[1];
+    switch (action)
     {
-    case "upload":
-        projects.upload(dry, topic, hashtag, changeSetType);
-        break;
     case "review":
+    case "re":
         projects.reviewChanges(reviewCommand);
         break;
     case "run":
+    case "ru":
         projects.executeCommand(executeCommand);
         break;
-    default:
+    case "upload":
+    case "u":
+        projects.upload(dry, topic, hashtag, changeSetType);
         break;
+    default:
+        throw new Exception("unknown action %s please use %s".format(action, actions));
     }
     return 0;
 }
