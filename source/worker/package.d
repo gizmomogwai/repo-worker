@@ -8,7 +8,7 @@ module worker;
 public import worker.packageversion;
 
 import androidlogger;
-import option;
+import optional;
 import unit;
 import std.algorithm;
 import std.concurrency;
@@ -96,9 +96,9 @@ void checker(Tid scheduler, Tid reviewer)
             (Project project)
             {
                 auto cmd = project.git("status").message("checker: getting status for '%s'".format(project.shortPath)).run;
-                if (cmd.isDefined)
+                if (!cmd.empty)
                 {
-                    auto dirty = cmd.get.dirty;
+                    auto dirty = cmd.front.dirty;
                     "checker: '%s' is %s".format(project.shortPath, dirty).info;
                     if (dirty == State.dirty)
                     {
@@ -248,18 +248,18 @@ struct Command
 
         if (dry_)
         {
-            return None!string();
+            return no!string;
         }
         auto res = execute(command_);
         if (res.status == 0)
         {
-            return Some(res.output);
+            return some(res.output);
         }
         else
         {
             "Problem working on: %s".format(command_).error;
             res.output.error;
-            return None!string();
+            return no!string;
         }
     }
 }
@@ -384,9 +384,9 @@ auto getTrackingBranches(Project project)
     info("getTrackingBranches");
     auto tracking = project.git("config", "--get-regex", "branch")
         .message("GetTrackingBranches").run();
-    if (tracking.isDefined)
+    if (!tracking.empty)
     {
-        return parseTrackingBranches(project, tracking.get);
+        return parseTrackingBranches(project, tracking.front);
     }
     Branch[] res;
     return res;
@@ -503,8 +503,8 @@ void doUploads(T)(T uploads, bool dry, string topic, string hashtag, ChangeSetTy
             .dry(dry)
             .message("PushingUpstream")
             .run();
-        if (result.isDefined) {
-            info(result.get);
+        if (!result.empty) {
+            info(result.front);
         }
     }
 }
@@ -516,9 +516,9 @@ auto uploadForRepo(Project project)
     foreach (branch; branches)
     {
         auto h = branch.getUploadInfo();
-        if (h.isDefined)
+        if (!h.empty)
         {
-            uploadInfos[branch] = h.get;
+            uploadInfos[branch] = h.front;
         }
     }
 
