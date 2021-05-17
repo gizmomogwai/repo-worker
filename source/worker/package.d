@@ -95,16 +95,20 @@ void checker(Tid scheduler, Tid reviewer)
         receive(
             (Project project)
             {
-                auto cmd = project.git("status").message("checker: getting status for '%s'".format(project.shortPath)).run;
-                if (!cmd.empty)
-                {
-                    auto dirty = cmd.front.dirty;
-                    "checker: '%s' is %s".format(project.shortPath, dirty).info;
-                    if (dirty == State.dirty)
-                    {
-                        reviewer.send(project);
-                    }
-                }
+                project
+                    .git("status")
+                    .message("checker: getting status for '%s'".format(project.shortPath))
+                    .run
+                    .each!((string output) {
+                            auto dirty = output.dirty;
+                            "checker: '%s' is %s".format(project.shortPath,
+                                                         dirty).info;
+                            if (dirty == State.dirty)
+                            {
+                                reviewer.send(project);
+                            }
+                        })
+                    ;
                 scheduler.send(thisTid(), ReportForDuty());
             },
             (Shutdown s)
@@ -242,9 +246,9 @@ struct Command
         return Command(this.command_, dry, this.message_);
     }
 
-    auto run()
+    Optional!string run()
     {
-        trace("%s: executing %s".format(message_, command_));
+        "%s: executing %s (%s)".format(message_, command_, command_.join(" ")).trace;
 
         if (dry_)
         {
@@ -253,7 +257,7 @@ struct Command
         auto res = execute(command_);
         if (res.status == 0)
         {
-            return some(res.output);
+            return res.output.some;
         }
         else
         {
@@ -312,10 +316,12 @@ struct Branch
 
     auto getUploadInfo()
     {
-        auto log = project.git("log", "--pretty=oneline", "--abbrev-commit",
-                "%s...%s/%s".format(localBranch, remote, remoteBranch)).message(
-                "GetUploadInfo").run();
-        return log.map!(o => UploadInfo(this, o));
+        return project
+            .git("log", "--pretty=oneline", "--abbrev-commit", "%s...%s/%s".format(localBranch, remote, remoteBranch))
+            .message("GetUploadInfo")
+            .run
+            .map!(o => UploadInfo(this, o))
+            ;
     }
 }
 
@@ -328,14 +334,24 @@ auto parseTrackingBranches(Project project, string s)
     string remote = null;
     string remoteBranch = null;
     auto remoteRegex = ctRegex!("branch\\.(.+?)\\.remote (.+)");
+    auto pushRemoteRegex = ctRegex!("branch\\.(.+?)\\.(?:push)?remote (.+)");
     auto mergeRegex = ctRegex!("branch\\.(.+?)\\.merge (.+)");
     foreach (line; lines)
     {
-        auto remoteCaptures = line.matchFirst(remoteRegex);
-        if (!remoteCaptures.empty)
         {
-            branch = remoteCaptures[1];
-            remote = remoteCaptures[2];
+            auto remoteCaptures = line.matchFirst(remoteRegex);
+            if (!remoteCaptures.empty)
+            {
+                branch = remoteCaptures[1];
+                remote = remoteCaptures[2];
+            }
+        }
+        if (branch == null || remote == null) {
+            auto remoteCaptures = line.matchFirst(pushRemoteRegex);
+            if (!remoteCaptures.empty) {
+                branch = remoteCaptures[1];
+                remote = remoteCaptures[2];
+            }
         }
 
         auto mergeCapture = line.matchFirst(mergeRegex);
@@ -381,15 +397,14 @@ auto parseTrackingBranches(Project project, string s)
 
 auto getTrackingBranches(Project project)
 {
-    info("getTrackingBranches");
-    auto tracking = project.git("config", "--get-regex", "branch")
-        .message("GetTrackingBranches").run();
-    if (!tracking.empty)
-    {
-        return parseTrackingBranches(project, tracking.front);
-    }
-    Branch[] res;
-    return res;
+    // dfmt off
+    return project
+        .git("config", "--get-regex", "branch")
+        .message("getTrackingBranches")
+        .run
+        .map!((string t) => parseTrackingBranches(project, t))
+        .front;
+    // dfmt on
 }
 
 auto parseUpload(string base, string edit)
@@ -458,8 +473,10 @@ auto parseUpload(string base, string edit)
     res[0].commits[0].sha1.shouldEqual("123456");
 }
 
-auto asGerritRequest(ChangeSetType changeSetType) {
-    switch (changeSetType) {
+auto asGerritRequest(ChangeSetType changeSetType)
+{
+    switch (changeSetType)
+    {
     case ChangeSetType.NORMAL:
         return "";
     case ChangeSetType.WIP:
@@ -478,34 +495,37 @@ void doUploads(T)(T uploads, bool dry, string topic, string hashtag, ChangeSetTy
     foreach (upload; uploads)
     {
         info(upload);
-        auto args =
-            [
-              "push",
-              upload.branch.remote,
-              "%s:refs/%s/%s%s".format(
-                upload.commits[0].sha1,
-                changeSetType == ChangeSetType.DRAFT ? "drafts" : "for",
-                upload.branch.remoteBranch,
-                changeSetType.asGerritRequest)
-            ];
-        if (topic != null) {
+        auto args = [
+            "push", upload.branch.remote,
+            "%s:refs/%s/%s%s".format(upload.commits[0].sha1, changeSetType == ChangeSetType.DRAFT
+                    ? "drafts" : "for", upload.branch.remoteBranch, changeSetType.asGerritRequest)
+        ];
+        if (topic != null)
+        {
             args ~= "-o";
             args ~= "topic=%s".format(topic);
         }
 
-        if (hashtag != null) {
+        if (hashtag != null)
+        {
             args ~= "-o";
             args ~= "t=%s".format(hashtag);
         }
 
-        auto result = upload.branch.project
+        auto result = upload
+            .branch
+            .project
             .git(args)
             .dry(dry)
             .message("PushingUpstream")
-            .run();
-        if (!result.empty) {
+            .run;
+        info(result);
+/+
+        if (!result.empty)
+        {
             info(result.front);
         }
++/
     }
 }
 
@@ -576,8 +596,9 @@ auto findGitsByWalking()
 {
     string base = ".".asAbsolutePath.asNormalizedPath.array;
     return Work(base, dirEntries("", ".git", SpanMode.depth)
-            .filter!(f => f.isDir && f.name.endsWith(".git")).map!(f => Project(base,
-                "%s/..".format(f))).array);
+            .filter!(f => f.isDir && f.name.endsWith(".git"))
+            .map!(f => Project(base, "%s/..".format(f)))
+            .array);
 }
 
 auto findGitsFromManifest()
@@ -589,13 +610,16 @@ auto findGitsFromManifest()
     }
     auto f = File("%s/.repo/project.list".format(manifestDir), "r");
     return Work(manifestDir, f.byLine().map!(line => Project(manifestDir,
-            "%s/%s".format(manifestDir, line.dup))).chain([Project(manifestDir,
-            "%s/%s".format(manifestDir, ".repo/manifests"))]).array);
+            "%s/%s".format(manifestDir, line.dup))).chain([
+                Project(manifestDir, "%s/%s".format(manifestDir, ".repo/manifests"))
+            ]).array);
 }
 
 void upload(T)(T work, bool dry, string topic, string hashtag, ChangeSetType changeSetType)
 {
-    auto summary = work.projects.map!(i => uploadForRepo(i)).filter!(i => i.length > 0)
+    auto summary = work.projects
+        .map!(i => uploadForRepo(i))
+        .filter!(i => i.length > 0)
         .join(
                 "# --------------------------------------------------------------------------------\n");
     if (summary.length == 0)
@@ -606,7 +630,8 @@ void upload(T)(T work, bool dry, string topic, string hashtag, ChangeSetType cha
     auto topicMessage = topic == null ? "" : "\n# Topic: %s".format(topic);
     auto hashtagMessage = hashtag == null ? "" : "\n# Hashtag: %s".format(hashtag);
     auto sep = "# ================================================================================";
-    summary = "# Workspace: %s%s%s\n# ChangeSetType: %s\n%s\n".format(work.base, topicMessage, hashtagMessage, changeSetType.to!string, sep) ~ summary;
+    summary = "# Workspace: %s%s%s\n# ChangeSetType: %s\n%s\n".format(work.base,
+            topicMessage, hashtagMessage, changeSetType.to!string, sep) ~ summary;
 
     auto fileName = "/tmp/worker_upload.txt";
     auto file = File(fileName, "w");
@@ -619,7 +644,8 @@ void upload(T)(T work, bool dry, string topic, string hashtag, ChangeSetType cha
     }
 
     auto edit = [environment.get("EDITOR", "vi"), "/tmp/worker_upload.txt"].spawnProcess.wait;
-    if (edit != 0) {
+    if (edit != 0)
+    {
         return;
     }
 
@@ -686,7 +712,8 @@ void reviewChanges(T)(T work, string reviewCommand)
     reviewer.send(Shutdown());
 }
 
-enum ChangeSetType {
+enum ChangeSetType
+{
     NORMAL,
     WIP,
     PRIVATE,
@@ -729,6 +756,7 @@ int worker_(string[] args)
         import asciitable;
         import packageversion;
         import colored;
+
         // dfmt off
         auto table = packageversion
             .getPackages
@@ -736,7 +764,8 @@ int worker_(string[] args)
             .fold!((table, p) => table.row.add(p.name.white).add(p.semVer.lightGray).add(p.license.lightGray).table)
                 (new AsciiTable(3).header.add("Package".bold).add("Version".bold).add("License".bold).table);
         // dfmt on
-        stderr.writeln("Packageinfo:\n", table.format.prefix("    ").headerSeparator(true).columnSeparator(true).to!string);
+        stderr.writeln("Packageinfo:\n", table.format.prefix("    ")
+                .headerSeparator(true).columnSeparator(true).to!string);
         return 0;
     }
 
