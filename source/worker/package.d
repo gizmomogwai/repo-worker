@@ -29,6 +29,7 @@ import std.sumtype;
 import std.traits;
 import std.typecons;
 import unit;
+import profiled;
 
 // Commandline parsing
 @(argparse.Command("review", "r").Description("Show changes of all subprojects."))
@@ -767,50 +768,88 @@ class GitCommit {
     }
 
     static auto parse(Project project, string rawCommit) {
+        GitCommit[] result = [];
+        try {
         auto lines = rawCommit.split("\n");
-        string sha = lines.front.split(" ")[1];
-        lines.popFront;
-        writeln(sha);
-        // auto tree =lines.front... // not needed
-        lines.popFront;
-        // auto parent = lines.front... // not needed
-        lines.popFront;
-        auto authorLine = lines.front.split(" ").array;
-        auto author = authorLine[1..$-2].join(" ");
-        auto authorDate = authorLine[$-2..$].parseGitDateTime;
-        lines.popFront;
-        auto committerLine = lines.front.split(" ").array;
-        auto committer = committerLine[1..$-2].join(" ");
-        auto committerDate = committerLine[$-2..$].parseGitDateTime;
-        lines.popFront; // skip line before git commit description
-        writeln(1, lines.front);
-        auto message = lines.join("\n ");
-        writeln("message: ", message);
-        return new GitCommit(project, sha.to!string, author, authorDate, committer, committerDate, message);
+        while (!lines.empty && lines.front.startsWith("commit")) {
+            string sha = lines.front.split(" ")[1];
+            lines.popFront;
+            // auto tree =lines.front... // not needed
+            lines.popFront;
+            while (lines.front.startsWith("parent")) {
+                // auto parent = lines.front... // not needed
+                lines.popFront;
+            }
+            auto authorLine = lines.front.split(" ").array;
+            auto author = authorLine[1..$-2].join(" ");
+            auto authorDate = authorLine[$-2..$].parseGitDateTime;
+            lines.popFront;
+            auto committerLine = lines.front.split(" ").array;
+            auto committer = committerLine[1..$-2].join(" ");
+            auto committerDate = committerLine[$-2..$].parseGitDateTime;
+            lines.popFront; // skip line before git commit description
+
+            string message;
+            while (!lines.empty && !lines.front.startsWith("commit")) {
+                message ~= "\n";
+                message ~= lines.front;
+                lines.popFront;
+            }
+            result ~= new GitCommit(project, sha.to!string, author, authorDate, committer, committerDate, message);
+        }
+        return result;
+        }
+         catch (Throwable t) {
+             writeln(project, rawCommit);
+        }
+        return null;
     }
     override string toString() {
         return "GitCommit(%s, %s, %s, %s)".format(project, sha, author, message);
     }
 }
 
-auto historyOfProject(Tuple!(Project, string) projectAndTimeSpec)
+auto historyOfProject(Tuple!(Project, "project", string, "gitTimeSpec") projectAndTimeSpec)
 {
-    Project project = projectAndTimeSpec[0];
-    string gitTimeSpec = projectAndTimeSpec[1];
+    Project project = projectAndTimeSpec.project;
+    string gitTimeSpec = projectAndTimeSpec.gitTimeSpec;
+    LogLevel.trace.log("Working on: ", project.path);
+    auto trace = theProfiler.start("git log of project '%s'".format(project.path));
     auto command = "git log --since='%s' --pretty=raw".format(gitTimeSpec);
     auto result = command.executeShell(null, std.process.Config.none, size_t.max, project.path);
     if (result.status != 0) {
-        throw new Exception("'%s' failed with '%s', output '%s'".format(command, result.status, result.output));
+        throw new Exception("'%s' failed in '%s' with '%s', output '%s'".format(command, project.path, result.status, result.output));
     }
-
-    return GitCommit.parse(project, result.output);
+    auto r = GitCommit.parse(project, result.output);
+    LogLevel.trace.log("Project: ", project.path, " commits: ", r.length);
+    return r;
 }
 
 void history(T)(T work, string gitTimeSpec) {
-    auto taskPool = new TaskPool();
-    auto results = taskPool.amap!(historyOfProject)(work.projects.map!(project => tuple(project, gitTimeSpec)));
-    taskPool.finish();
-    writeln(results);
+    {
+        theProfiler.start("Collecting history of gits");
+        auto taskPool = new TaskPool();
+        auto projects = work.projects.map!(project => tuple!("project", "gitTimeSpec")(project, gitTimeSpec)).array;
+        LogLevel.trace.log("History for ", projects.length, " projects");
+        /+
+         auto results = projects.map!(historyOfProject).array;
+         +/
+        auto results = taskPool
+            .amap!(historyOfProject)(projects)
+            .filter!(commits => commits.length > 0)
+            .array
+            .sort!((a, b) => a.length > b.length);
+        taskPool.finish();
+        import asciitable;
+        auto table = new AsciiTable(2);
+        foreach (GitCommit[] commits; results) {
+            auto commit = commits[0];
+            auto projectShortPath = commit.project.shortPath;
+            table.row().add(projectShortPath).add(commits.length.to!string);
+        }
+        writeln(table.format);
+    }
+//    writeln(results);
     //auto executeResults = work.projects.parallel.map!();
     /*
         if (res.status != 0)
@@ -866,6 +905,9 @@ enum TraversalMode {
 }
 int worker_(Arguments arguments)
 {
+    theProfiler = new Profiler;
+    scope (exit)
+        theProfiler.dumpJson("trace.json");
     /+
     string reviewCommand = "magit %s";
     string executeCommand = "git status";
