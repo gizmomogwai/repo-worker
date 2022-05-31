@@ -10,11 +10,11 @@ public import worker.packageversion;
 import androidlogger;
 import argparse;
 import optional : Optional, no, some;
-import unit;
 import std.algorithm;
 import std.concurrency;
 import std.conv;
 import std.datetime.stopwatch;
+import std.datetime;
 import std.experimental.logger;
 import std.file;
 import std.getopt;
@@ -28,6 +28,7 @@ import std.string;
 import std.sumtype;
 import std.traits;
 import std.typecons;
+import unit;
 
 // Commandline parsing
 @(argparse.Command("review", "r").Description("Show changes of all subprojects."))
@@ -743,15 +744,55 @@ void executeCommand(T)(T work, string command)
     }
 }
 
-class Commit {
-    this() {
-        
+auto parseGitDateTime(string[] epochAndZone) {
+    return SysTime(unixTimeToStdTime(epochAndZone[0].to!long), UTC());
+}
+
+class GitCommit {
+    Project project;
+    string sha;
+    string author;
+    SysTime authorDate;
+    string committer;
+    SysTime committerDate;
+    string message;
+    this(Project project, string sha, string author, SysTime authorDate, string comitter, SysTime committerDate, string message) {
+        this.project = project;
+        this.sha = sha;
+        this.author = author;
+        this.authorDate = authorDate;
+        this.committer = committer;
+        this.committerDate = committerDate;
+        this.message = message;
     }
-    static Commit parse(Project project, string rawCommit) {
+
+    static auto parse(Project project, string rawCommit) {
         auto lines = rawCommit.split("\n");
-        
+        string sha = lines.front.split(" ")[1];
+        lines.popFront;
+        writeln(sha);
+        // auto tree =lines.front... // not needed
+        lines.popFront;
+        // auto parent = lines.front... // not needed
+        lines.popFront;
+        auto authorLine = lines.front.split(" ").array;
+        auto author = authorLine[1..$-2].join(" ");
+        auto authorDate = authorLine[$-2..$].parseGitDateTime;
+        lines.popFront;
+        auto committerLine = lines.front.split(" ").array;
+        auto committer = committerLine[1..$-2].join(" ");
+        auto committerDate = committerLine[$-2..$].parseGitDateTime;
+        lines.popFront; // skip line before git commit description
+        writeln(1, lines.front);
+        auto message = lines.join("\n ");
+        writeln("message: ", message);
+        return new GitCommit(project, sha.to!string, author, authorDate, committer, committerDate, message);
+    }
+    override string toString() {
+        return "GitCommit(%s, %s, %s, %s)".format(project, sha, author, message);
     }
 }
+
 auto historyOfProject(Tuple!(Project, string) projectAndTimeSpec)
 {
     Project project = projectAndTimeSpec[0];
@@ -762,7 +803,7 @@ auto historyOfProject(Tuple!(Project, string) projectAndTimeSpec)
         throw new Exception("'%s' failed with '%s', output '%s'".format(command, result.status, result.output));
     }
 
-    return new Commit.parse(project, result.output);
+    return GitCommit.parse(project, result.output);
 }
 
 void history(T)(T work, string gitTimeSpec) {
