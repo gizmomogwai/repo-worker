@@ -8,7 +8,8 @@ module worker;
 public import worker.packageversion;
 
 import androidlogger;
-import optional;
+import argparse;
+import optional : Optional, no, some;
 import unit;
 import std.algorithm;
 import std.concurrency;
@@ -24,9 +25,66 @@ import std.range;
 import std.regex;
 import std.stdio;
 import std.string;
+import std.sumtype;
 import std.traits;
 import std.typecons;
 
+// Commandline parsing
+@(argparse.Command("review", "r").Description("Show changes of all subprojects."))
+struct Review
+{
+    @NamedArgument
+    string command = "magit %s";
+}
+
+@(argparse.Command("upload", "u").Description("Upload changes to review."))
+struct Upload
+{
+    @NamedArgument
+    string topic;
+    @NamedArgument
+    string hashtag;
+    @NamedArgument
+    ChangeSetType changeSetType = ChangeSetType.NORMAL;
+}
+
+@(argparse.Command("execute", "run", "e").Description("Run a command on all subprojects."))
+struct Execute {
+    @NamedArgument
+    string command = "git status";
+}
+
+@(argparse.Command("version", "v").Description("Show version information."))
+struct Version {
+    @NamedArgument
+    bool v;
+}
+@(argparse.Command("log", "l"))
+struct Log {
+    @(NamedArgument("durationSpec", "d").Description("A git duration spec (e.g. 10 days)"))
+    string gitDurationSpec;
+}
+struct Arguments
+{
+    @ArgumentGroup("Common arguments")
+    {
+        @(NamedArgument.Description("Simulate commands."))
+        bool dryRun = false;
+
+        @(NamedArgument.Description("Use ANSI colors in output."))
+        bool withColors = true;
+
+        @(NamedArgument("traversalMode", "mode").Description("Find subprojects with repo or filesystem."))
+        TraversalMode traversalMode = TraversalMode.REPO;
+
+        @(NamedArgument("logLevel", "l").Description("Set logging level."))
+        LogLevel logLevel;
+    }
+    @SubCommands
+    SumType!(Default!Review, Upload, Execute, Version, Log) subcommand;
+}
+
+// Worker
 struct Shutdown
 {
 }
@@ -661,18 +719,17 @@ void executeCommand(T)(T work, string command)
     {
         LogLevel.warning.log("Running %s in %s".format(command, project.path.asNormalizedPath));
         auto sw = StopWatch(AutoStart.yes);
-        auto res = command.executeShell(null, Config.none, size_t.max, project.path);
+        auto res = command.executeShell(null, std.process.Config.none, size_t.max, project.path);
         if (res.status != 0)
         {
             status = res.status;
         }
-        auto duration = sw.peek();
-        auto d = duration.total!("msecs");
+        auto duration = sw.peek().total!("msecs");
         // dfmt off
         auto description = "Finished with %s in %s"
             .format(res.status,
                 TIME
-                    .transform(d)
+                    .transform(duration)
                     .onlyRelevant
                     .map!(p => "%s%s".format(p.value, p.name))
                     .join(" "));
@@ -684,6 +741,48 @@ void executeCommand(T)(T work, string command)
             (res.status == 0 ? LogLevel.info : LogLevel.error).log(output);
         }
     }
+}
+
+class Commit {
+    this() {
+        
+    }
+    static Commit parse(Project project, string rawCommit) {
+        auto lines = rawCommit.split("\n");
+        
+    }
+}
+auto historyOfProject(Tuple!(Project, string) projectAndTimeSpec)
+{
+    Project project = projectAndTimeSpec[0];
+    string gitTimeSpec = projectAndTimeSpec[1];
+    auto command = "git log --since='%s' --pretty=raw".format(gitTimeSpec);
+    auto result = command.executeShell(null, std.process.Config.none, size_t.max, project.path);
+    if (result.status != 0) {
+        throw new Exception("'%s' failed with '%s', output '%s'".format(command, result.status, result.output));
+    }
+
+    return new Commit.parse(project, result.output);
+}
+
+void history(T)(T work, string gitTimeSpec) {
+    auto taskPool = new TaskPool();
+    auto results = taskPool.amap!(historyOfProject)(work.projects.map!(project => tuple(project, gitTimeSpec)));
+    taskPool.finish();
+    writeln(results);
+    //auto executeResults = work.projects.parallel.map!();
+    /*
+        if (res.status != 0)
+        {
+            status = res.status;
+        }
+        auto output = std.string.strip(res.output);
+        if (output != null)
+        {
+            LogLevel.info.log(output);
+        }
+    }
+    */
 }
 
 void reviewChanges(T)(T work, string reviewCommand)
@@ -717,11 +816,16 @@ enum ChangeSetType
     NORMAL,
     WIP,
     PRIVATE,
-    DRAFT
+    DRAFT,
 }
 
-int worker_(string[] args)
+enum TraversalMode {
+    REPO,
+    WALK,
+}
+int worker_(Arguments arguments)
 {
+    /+
     string reviewCommand = "magit %s";
     string executeCommand = "git status";
     bool walk = false;
@@ -768,31 +872,47 @@ int worker_(string[] args)
                 .headerSeparator(true).columnSeparator(true).to!string);
         return 0;
     }
++/
+    writeln(arguments);
+    sharedLog = new AndroidLogger(stderr, arguments.withColors, arguments.logLevel);
 
-    sharedLog = new AndroidLogger(stderr, withColors, loglevel);
+    // hack for version
+    if (arguments.subcommand.match!((Version v) {
+            import asciitable;
+            import packageversion;
+            import colored;
 
-    if (args.length != 2)
-    {
-        throw new Exception("please specify action review/upload/run");
-    }
+            // dfmt off
+            auto table = packageversion
+                .getPackages
+                .sort!("a.name < b.name")
+                .fold!((table, p) => table.row.add(p.name.white).add(p.semVer.lightGray).add(p.license.lightGray).table)
+                    (new AsciiTable(3).header.add("Package".bold).add("Version".bold).add("License".bold).table);
+            // dfmt on
+            stderr.writeln("Packageinfo:\n", table.format.prefix("    ")
+                           .headerSeparator(true).columnSeparator(true).to!string);
+            return true;
+        },
+        _ => false
+    )) return 0;
 
-    auto projects = walk ? findGitsByWalking() : findGitsFromManifest();
+    auto projects = arguments.traversalMode == TraversalMode.WALK ? findGitsByWalking() : findGitsFromManifest();
 
-    auto command = args[1];
-    switch (command)
-    {
-    case "upload":
-        projects.upload(dry, topic, hashtag, changeSetType);
-        break;
-    case "review":
-        projects.reviewChanges(reviewCommand);
-        break;
-    case "run":
-        projects.executeCommand(executeCommand);
-        break;
-    default:
-        break;
-    }
+    arguments.subcommand.match!(
+      (Review r) {
+          projects.reviewChanges(r.command);
+      },
+      (Upload u) {
+          projects.upload(arguments.dryRun, u.topic, u.hashtag, u.changeSetType);
+      },
+      (Execute e) {
+          projects.executeCommand(e.command);
+      },
+      (Log l) {
+          projects.history(l.gitDurationSpec);
+      },
+      (_) {}
+    );
     return 0;
 }
 

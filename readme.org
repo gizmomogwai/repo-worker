@@ -6,3 +6,7 @@ works your dirty [[https://code.google.com/p/git-repo/][repo]] git repositories 
 
 ** Todos
 *** TODO make command to run on dirty repositories configurable
+*** TODO implement oper/history
+**** TODO parse git commits
+**** TODO clickable links in git commits ... e.g. jira links or gerrit links
+**** TODO make scanning of logs parallel (and measure time here)
