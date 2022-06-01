@@ -108,6 +108,8 @@ void history(T)(T work, string gitTimeSpec) {
             .array
             .sort!((a, b) => a.length > b.length);
         taskPool.finish();
+
+/+
         import asciitable;
         auto table = new AsciiTable(2);
         foreach (GitCommit[] commits; results) {
@@ -116,19 +118,6 @@ void history(T)(T work, string gitTimeSpec) {
             table.row().add(projectShortPath).add(commits.length.to!string);
         }
         table.format.info;
+        +/
     }
-//    writeln(results);
-    //auto executeResults = work.projects.parallel.map!();
-    /*
-      if (res.status != 0)
-      {
-      status = res.status;
-      }
-      auto output = std.string.strip(res.output);
-      if (output != null)
-      {
-      LogLevel.info.log(output);
-      }
-      }
-    */
 }
