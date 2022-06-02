@@ -10,6 +10,7 @@
 		"colorize": "1.0.5",
 		"d-option": "0.0.7",
 		"dime": "0.0.6",
+		"ncurses": "~master",
 		"optional": "1.2.1",
 		"packageversion": "0.0.19",
 		"profiled": "~master",

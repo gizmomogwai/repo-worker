@@ -1,5 +1,6 @@
 module worker.history;
 
+import screen;
 import worker.common : Project;
 
 import std.datetime : SysTime, unixTimeToStdTime, UTC;
@@ -11,7 +12,7 @@ import std.experimental.logger : trace, error, info;
 import profiled : theProfiler;
 import std.process;
 import std.parallelism : TaskPool;
-import std.algorithm : map, filter, sort;
+import std.algorithm : map, filter, sort, joiner;
 
 auto parseGitDateTime(string[] epochAndZone) {
     return SysTime(unixTimeToStdTime(epochAndZone[0].to!long), UTC());
@@ -73,7 +74,7 @@ class GitCommit {
         return null;
     }
     override string toString() {
-        return "GitCommit(%s, %s, %s, %s)".format(project, sha, author, message);
+        return "GitCommit(%s, %s, %s, %s, %s)".format(project, sha, committerDate, author, message);
     }
 }
 
@@ -93,6 +94,73 @@ auto historyOfProject(Tuple!(Project, "project", string, "gitTimeSpec") projectA
     return r;
 }
 
+
+
+struct State
+{
+    bool finished;
+}
+
+State state =
+{
+    finished: false,
+};
+
+class HistoryUi : Ui!(State) {
+    this(Screen screen, Component root) {
+        super(screen, root);
+    }
+    /// handle input events
+    override State handleKey(KeyInput input, State state)
+    {
+        if (input.specialKey)
+        {
+            switch (input.key)
+            {
+            case Key.up:
+                root.up;
+                render;
+                break;
+            case Key.down:
+                root.down;
+                render;
+                break;
+            case Key.resize:
+                root.resize(0, 0, screen.width, screen.height);
+                render;
+                break;
+            default:
+                break;
+            }
+        }
+        else
+        {
+            switch (input.input)
+            {
+            case [10]:
+            case [127]:
+                state.finished = true;
+                break;
+            case "j":
+                root.up;
+                render;
+                break;
+            case "k":
+                root.down;
+                render;
+                break;
+            default:
+                break;
+            }
+        }
+        return state;
+    }
+
+    void resize() {
+        root.resize(0, 0, screen.width, screen.height);
+    }
+}
+
 void history(T)(T work, string gitTimeSpec) {
     {
         theProfiler.start("Collecting history of gits");
@@ -105,19 +173,34 @@ void history(T)(T work, string gitTimeSpec) {
         auto results = taskPool
             .amap!(historyOfProject)(projects)
             .filter!(commits => commits.length > 0)
+            .joiner
             .array
-            .sort!((a, b) => a.length > b.length);
+            .sort!((a, b) => a.committerDate > b.committerDate)
+            .array;
         taskPool.finish();
 
-/+
-        import asciitable;
-        auto table = new AsciiTable(2);
-        foreach (GitCommit[] commits; results) {
-            auto commit = commits[0];
-            auto projectShortPath = commit.project.shortPath;
-            table.row().add(projectShortPath).add(commits.length.to!string);
+        KeyInput keyInput;
+        Screen screen = new Screen("/dev/tty");
+        scope (exit)
+        {
+            screen.destroy;
         }
-        table.format.info;
-        +/
+
+        auto ui = new HistoryUi(screen,
+                                new VSplit(0.6,
+                                           new List!(GitCommit, gitCommit => "%s %s %s".format(gitCommit.committerDate, gitCommit.project.shortPath, gitCommit.author))(results),
+                                           new Filled("b")));
+        ui.resize();
+        while (!state.finished)
+        {
+            try
+            {
+                ui.render();
+                state = ui.handleKey(screen.getWideCharacter, state);
+            }
+            catch (NoKeyException e)
+            {
+            }
+        }
     }
 }

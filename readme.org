@@ -4,9 +4,20 @@
 ** Introduction
 works your dirty [[https://code.google.com/p/git-repo/][repo]] git repositories with [[https://github.com/gizmomogwai/magit][magit]].
 
+** Implementation notes
+*** history
+- after the history is calculated, the program is a single threaded ncurses app
+
+*** ncurses
+- KEY_RESIZE to react on terminal resizes
+- using ncurses dependency
+
+
 ** Todos
 *** TODO make command to run on dirty repositories configurable
 *** TODO implement oper/history
 **** TODO parse git commits
 **** TODO clickable links in git commits ... e.g. jira links or gerrit links
 **** TODO make scanning of logs parallel (and measure time here)
+
+
