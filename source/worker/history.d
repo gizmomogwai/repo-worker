@@ -1,18 +1,20 @@
 module worker.history;
 
-import screen;
+import terminal;
+import colored;
 import worker.common : Project;
 
 import std.datetime : SysTime, unixTimeToStdTime, UTC;
 import std.typecons : Tuple, tuple;
 import std.conv : to;
-import std.string : split, startsWith, join, format;
+import std.string : split, startsWith, join, format, leftJustify;
 import std.array : empty, front, popFront, array;
 import std.experimental.logger : trace, error, info;
 import profiled : theProfiler;
 import std.process;
 import std.parallelism : TaskPool;
 import std.algorithm : map, filter, sort, joiner;
+import std.range : take;
 
 auto parseGitDateTime(string[] epochAndZone) {
     return SysTime(unixTimeToStdTime(epochAndZone[0].to!long), UTC());
@@ -107,12 +109,13 @@ State state =
 };
 
 class HistoryUi : Ui!(State) {
-    this(Screen screen, Component root) {
-        super(screen, root);
+    this(Terminal terminal, Component root) {
+        super(terminal, root);
     }
     /// handle input events
     override State handleKey(KeyInput input, State state)
     {
+        /*
         if (input.specialKey)
         {
             switch (input.key)
@@ -126,7 +129,7 @@ class HistoryUi : Ui!(State) {
                 render;
                 break;
             case Key.resize:
-                root.resize(0, 0, screen.width, screen.height);
+                resize();
                 render;
                 break;
             default:
@@ -134,6 +137,7 @@ class HistoryUi : Ui!(State) {
             }
         }
         else
+        */
         {
             switch (input.input)
             {
@@ -157,9 +161,12 @@ class HistoryUi : Ui!(State) {
     }
 
     void resize() {
-        root.resize(0, 0, screen.width, screen.height);
+        with (terminal.dimension) {
+            root.resize(0, 0, width, height);
+        }
     }
 }
+
 
 void history(T)(T work, string gitTimeSpec) {
     {
@@ -180,15 +187,14 @@ void history(T)(T work, string gitTimeSpec) {
         taskPool.finish();
 
         KeyInput keyInput;
-        Screen screen = new Screen("/dev/tty");
-        scope (exit)
-        {
-            screen.destroy;
-        }
+        scope terminal = new Terminal();
 
-        auto ui = new HistoryUi(screen,
+        auto ui = new HistoryUi(terminal,
                                 new VSplit(0.6,
-                                           new List!(GitCommit, gitCommit => "%s %s %s".format(gitCommit.committerDate, gitCommit.project.shortPath, gitCommit.author))(results),
+                                           new List!(GitCommit,
+                                                     gitCommit => "%s %s %s".format(gitCommit.committerDate.to!string.red,
+                                                                                    gitCommit.project.shortPath.leftJustify(10).take(10).to!string.blue,
+                                                                                    gitCommit.author.leftJustify(20).take(20)))(results),
                                            new Filled("b")));
         ui.resize();
         while (!state.finished)
@@ -196,7 +202,7 @@ void history(T)(T work, string gitTimeSpec) {
             try
             {
                 ui.render();
-                state = ui.handleKey(screen.getWideCharacter, state);
+                state = ui.handleKey(terminal.getInput(), state);
             }
             catch (NoKeyException e)
             {

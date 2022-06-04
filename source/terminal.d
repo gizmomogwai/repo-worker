@@ -1,6 +1,194 @@
-module screen;
+module terminal;
 
-import deimos.ncurses;
+
+import core.sys.posix.termios;
+import core.sys.posix.unistd;
+import core.sys.posix.sys.ioctl;
+import core.stdc.stdio;
+import core.stdc.ctype;
+
+import std.stdio;
+import std;
+import std.conv : to;
+alias Position = Tuple!(int, "x", int, "y");
+alias Dimension = Tuple!(int, "width", int, "height"); /// https://en.wikipedia.org/wiki/ANSI_escape_code
+
+enum Operation : string
+{
+
+    CURSOR_UP = "A",
+    CURSOR_DOWN = "B",
+    CURSOR_FORWARD = "C",
+    CURSOR_BACKWARD = "D",
+    CURSOR_POSITION = "H",
+    ERASE_IN_DISPLAY = "J",
+    ERASE_IN_LINE = "K",
+    DEVICE_STATUS_REPORT = "n",
+    CURSOR_POSITION_REPORT = "R",
+    CLEAR_TERMINAL = "2J",
+    CLEAR_LINE = "2K",
+}
+
+enum State : string {
+    CURSOR = "?25",
+    ALTERNATE_BUFFER = "?1049",
+}
+
+enum Mode : string {
+    LOW = "l",
+    HIGH = "h",
+}
+
+
+/+    static string esc(Operation operation, string arg) {
+        string result = "\x1b[";
+        result ~= arg;
+        result ~= operation;
+        return result;
+    }
+    +/
+/+
+    static string esc(Args...)(Operation operation, Args args)
+    {
+        string result = "\x1b[";
+        result ~= [args].join(";").joiner;
+        result ~= operation;
+        return result;
+    }
++/
+/+
+    static string moveRight(int steps)
+    {
+        return esc(Operation.CURSOR_FORWARD, "%d".format(steps));
+    }
+
+    static string moveDown(int steps)
+    {
+        return esc(Operation.CURSOR_DOWN, "%d".format(steps));
+    }
+
+    static Position getCursorPosition()
+    {
+        auto get = esc(Operation.DEVICE_STATUS_REPORT, "6");
+        (core.sys.posix.unistd.write(2, get.ptr, get.length) == get.length).errnoEnforce(
+                "Cannot request cursor position");
+
+        long bytesRead;
+        string position;
+        {
+            int result;
+            while ((bytesRead = core.sys.posix.unistd.read(1, &result, 1)) == 1)
+            {
+                position ~= result;
+            }
+        }
+
+        Position result;
+        (2 == position.formattedRead!(esc(VT.Operation.CURSOR_POSITION_REPORT,
+                "%d", "%d"))(result.y, result.x)).enforce("Cannot parse position");
+        return result;
+    }
+        +/
+/+
+    static Dimension getDimension()
+    {
+        auto hideCursor = VT.esc(VT.Operation.HIDE_CURSOR, "?25");
+        (core.sys.posix.unistd.write(2, hideCursor.ptr, hideCursor.length) == hideCursor.length).errnoEnforce(
+                "Cannot hide cursor");
+        scope (exit)
+        {
+            auto showCursor = VT.esc(VT.Operation.SHOW_CURSOR, "?25");
+            (core.sys.posix.unistd.write(2, showCursor.ptr, showCursor.length) == showCursor.length).errnoEnforce(
+                    "Cannot show cursor");
+        }
+
+        auto move = moveRight(999) ~ moveDown(999);
+        (core.sys.posix.unistd.write(2, move.ptr, move.length) == move.length).errnoEnforce(
+                "Cannot move to right bottom");
+
+        auto position = getCursorPosition();
+        return Dimension(position.x, position.y);
+    }
+    +/
+
+
+string execute(Operation operation)
+{
+    return "\x1b[" ~ operation;
+}
+
+string execute(Operation operation, string[] args...) {
+    return "\x1b[" ~ args.join(";") ~ operation;
+}
+
+string to(State state, Mode mode) {
+    return "\x1b[" ~ state ~ mode;
+}
+
+
+Terminal INSTANCE;
+class Terminal {
+    termios originalState;
+    this() {
+        (tcgetattr(1, &originalState) == 0).errnoEnforce("Cannot get termios");
+        termios newState = originalState;
+        newState.c_lflag &= ~(ECHO | ICANON);
+        (tcsetattr(1, TCSAFLUSH, &newState) == 0).errnoEnforce("Cannot set termios");
+
+        auto data =
+            State.ALTERNATE_BUFFER.to(Mode.HIGH) ~
+            Operation.CLEAR_TERMINAL.execute ~
+            State.CURSOR.to(Mode.LOW);
+        w(data, "Cannot initialize terminal");
+
+    }
+    void resize(Component root) {
+        auto d = dimension;
+        root.resize(0, 0, d.width-1, d.height-1);
+        root.render(this);
+    }
+    auto putString(string s) {
+        w(s, "Cannot write string");
+        return this;
+    }
+
+    auto xy(int x, int y) {
+        w(Operation.CURSOR_POSITION.execute((y+1).to!string, (x+1).to!string), "Cannot position cursor");
+        return this;
+    }
+
+    void w(string data, lazy string errorMessage) {
+        (core.sys.posix.unistd.write(2, data.ptr, data.length) == data.length).errnoEnforce(
+          errorMessage);
+    }
+
+    auto clear() {
+        w(Operation.CLEAR_TERMINAL.execute, "Cannot clear terminal");
+        return this;
+    }
+    ~this() {
+        auto data =
+            State.ALTERNATE_BUFFER.to(Mode.HIGH) ~
+            Operation.CLEAR_TERMINAL.execute ~
+            State.CURSOR.to(Mode.HIGH) ~
+            State.ALTERNATE_BUFFER.to(Mode.LOW);
+        (core.sys.posix.unistd.write(2, data.ptr, data.length) == data.length).errnoEnforce(
+          "Cannot deinitialize terminal");
+
+        (tcsetattr(1, TCSANOW, &originalState) == 0).errnoEnforce("Cannot set termios");
+    }
+    Dimension dimension() {
+        winsize ws;
+        (ioctl(1, TIOCGWINSZ, &ws) == 0).errnoEnforce("Cannot get winsize");
+        return Dimension(ws.ws_col, ws.ws_row);
+    }
+    KeyInput getInput() {
+        int c;
+        (core.sys.posix.unistd.read(1, &c, 1) == 1).errnoEnforce("Cannot read next input");
+        return KeyInput.fromText("" ~ cast(char)c);
+    }
+}
+/+
 import std.algorithm;
 import std.array;
 import std.conv;
@@ -10,14 +198,15 @@ import std.stdio;
 import std.string;
 import std.uni;
 import std.functional : unaryFun;
-
++/
 enum Key : int
 {
+    down = 1,
+    up = 2,
+    /+
     codeYes = KEY_CODE_YES,
     min = KEY_MIN,
     codeBreak = KEY_BREAK,
-    down = KEY_DOWN,
-    up = KEY_UP,
     left = KEY_LEFT,
     right = KEY_RIGHT,
     home = KEY_HOME,
@@ -171,8 +360,9 @@ enum Key : int
     resize = KEY_RESIZE,
     event = KEY_EVENT,
     max = KEY_MAX,
+    +/
 }
-
+/+
 enum Attributes : chtype
 {
     normal = A_NORMAL,
@@ -207,28 +397,23 @@ void activate(Attributes attributes)
         : deimos.ncurses.curses.attroff(A_UNDERLINE);
 }
 
+
++/
 /// either a special key like arrow or backspace
 /// or an utf-8 string (e.g. ä is already 2 bytes in an utf-8 string)
 struct KeyInput
 {
     bool specialKey;
-    wint_t key;
     string input;
-    this(bool specialKey, wint_t key, string input)
+    this(bool specialKey, string input)
     {
         this.specialKey = specialKey;
-        this.key = key;
         this.input = input.dup;
-    }
-
-    static KeyInput fromSpecialKey(wint_t key)
-    {
-        return KeyInput(true, key, "");
     }
 
     static KeyInput fromText(string s)
     {
-        return KeyInput(false, 0, s);
+        return KeyInput(false, s);
     }
 }
 
@@ -239,7 +424,7 @@ class NoKeyException : Exception
         super(s);
     }
 }
-
+/+
 class Screen
 {
     File tty;
@@ -344,7 +529,7 @@ class Screen
         }
     }
 }
-
++/
 int byteCount(int k)
 {
     if (k < 0b1100_0000)
@@ -364,15 +549,6 @@ int byteCount(int k)
     return 4;
 }
 
-@("test strings") unittest
-{
-    string s = ['d'];
-    writeln(KeyInput.fromText(s));
-    import std.stdio;
-
-    writeln(s.length);
-}
-
 abstract class Component {
     int left;
     int top;
@@ -384,7 +560,7 @@ abstract class Component {
         this.right = right;
         this.bottom = bottom;
     }
-    abstract void render(Screen screen);
+    abstract void render(Terminal terminal);
     void up() {
     }
     void down() {
@@ -412,9 +588,9 @@ class VSplit : Component {
         this.right.resize(splitPos, top, right, bottom);
         super.resize(left, top, right, bottom);
     }
-    override void render(Screen screen) {
-        left.render(screen);
-        right.render(screen);
+    override void render(Terminal terminal) {
+        left.render(terminal);
+        right.render(terminal);
     }
     override void up() {
         left.up();
@@ -429,15 +605,50 @@ class Filled : Component {
     this(string what) {
         this.what = what;
     }
-    override void render(Screen screen) {
+    override void render(Terminal terminal) {
         for (int y=top; y<bottom; y++) {
             for (int x=left; x<right; x++) {
-                screen.addstring(y, x, what);
+                terminal.xy(x, y).putString(what);
             }
         }
-        screen.addstring(top, left, "0");
-        screen.addstring(bottom-1, right-1, "1");
+        terminal.xy(left, top).putString("0");
+        terminal.xy(right-1, bottom-1).putString("1");
+        terminal.xy(left+10, top+10).putString("signalcount: %s".format(signalCount));
     }
+}
+
+string takeIgnoreAnsiEscapes(string s, uint length) {
+    string result;
+    uint count = 0;
+    bool inColorAnsiEscape = false;
+    while (!s.empty) {
+        auto current = s.front;
+        if (current == 27) {
+            inColorAnsiEscape = true;
+            result ~= current;
+        } else {
+            if (inColorAnsiEscape) {
+                result ~= current;
+                if (current == 'm') {
+                    inColorAnsiEscape = false;
+                }
+            } else {
+                if (count < length) {
+                    result ~= current;
+                    count++;
+                }
+            }
+        }
+        s.popFront;
+    }
+    return result;
+}
+
+@("takeIgnoreAnsiEscapes") unittest {
+    import unit_threaded;
+    "hello world".takeIgnoreAnsiEscapes(5).should == "hello";
+    "he\033[123mllo world\033[0m".takeIgnoreAnsiEscapes(5).should == "he\033[123mllo\033[0m";
+    "köstlin".takeIgnoreAnsiEscapes(7).should == "köstlin";
 }
 
 class List(T, alias stringTransform) : Component
@@ -473,7 +684,7 @@ class List(T, alias stringTransform) : Component
         this.model = model;
         this.scrollInfo = ScrollInfo(0, 0);
     }
-    override void render(Screen screen)
+    override void render(Terminal terminal)
     {
         for (int i=0; i<height; ++i)
         {
@@ -481,9 +692,9 @@ class List(T, alias stringTransform) : Component
             if (index >= model.length) return;
             auto text = (index == scrollInfo.selection ? "> %s" : "  %s")
                 .format(stringTransform(model[index]))
-                .take(width())
+                .takeIgnoreAnsiEscapes(width())
                 .to!string;
-            screen.addstring(top+i, left, text);
+            terminal.xy(left, top+i).putString(text);
         }
     }
     override void up()
@@ -576,26 +787,35 @@ class List(T, alias stringTransform) : Component
 }
 +/
 
-class Ui(State) {
-    Screen screen;
+extern(C) void signal(int sig, void function(int) );
+int signalCount;
+UiInterface theUi;
+extern(C) void windowSizeChangedSignalHandler(int sig) {
+    signalCount++;
+    theUi.render();
+}
+
+abstract class UiInterface {
+    void render();
+}
+class Ui(State) : UiInterface{
+    Terminal terminal;
     Component root;
-    this(Screen screen, Component root) {
-        this.screen = screen;
+    this(Terminal terminal, Component root) {
+        this.terminal = terminal;
         this.root = root;
+        theUi = this;
+        signal(28, &windowSizeChangedSignalHandler);
     }
-    void render() {
+    override void render() {
         try
         {
-            // ncurses
-            screen.clear;
+            auto dimension = terminal.dimension;
 
-            // own api
-            root.render(screen);
+            terminal.clear;
+            root.resize(0, 0, dimension.width, dimension.height);
+            root.render(terminal);
             // status.render;
-
-            // ncurses
-            screen.refresh;
-            screen.update;
         }
         catch (Exception e)
         {

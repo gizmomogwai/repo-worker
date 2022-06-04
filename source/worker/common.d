@@ -86,7 +86,7 @@ struct Project
 
     string shortPath()
     {
-        return path.replace(base, "")[1 .. $];
+        return path.asAbsolutePath.asNormalizedPath.array.replace(base, "");
     }
 }
 
