@@ -792,11 +792,11 @@ int signalCount;
 UiInterface theUi;
 extern(C) void windowSizeChangedSignalHandler(int sig) {
     signalCount++;
-    theUi.render();
+    theUi.resized();
 }
 
 abstract class UiInterface {
-    void render();
+    void resized();
 }
 class Ui(State) : UiInterface{
     Terminal terminal;
@@ -807,13 +807,10 @@ class Ui(State) : UiInterface{
         theUi = this;
         signal(28, &windowSizeChangedSignalHandler);
     }
-    override void render() {
+    void render() {
         try
         {
-            auto dimension = terminal.dimension;
-
             terminal.clear;
-            root.resize(0, 0, dimension.width, dimension.height);
             root.render(terminal);
             // status.render;
         }
@@ -822,6 +819,11 @@ class Ui(State) : UiInterface{
             import std.experimental.logger : error;
             e.to!string.error;
         }
+    }
+    override void resized() {
+        auto dimension = terminal.dimension;
+        root.resize(0, 0, dimension.width, dimension.height);
+        render;
     }
     abstract State handleKey(KeyInput input, State state);
 }

@@ -1,3 +1,4 @@
+#+TODO: TODO IN-PROGRESS | DONE
 * repo-worker
 [[https://github.com/gizmomogwai/repo-worker][https://img.shields.io/github/tag/gizmomogwai/repo-worker.svg?style=flat-square]] [[https://travis-ci.org/gizmomogwai/repo-worker][https://img.shields.io/travis/gizmomogwai/repo-worker/master.svg?style=flat-square]] [[https://codecov.io/gh/gizmomogwai/repo-worker][https://img.shields.io/codecov/c/github/gizmomogwai/repo-worker/master.svg?style=flat-square]] [[https://gizmomogwai.github.io/repo-worker][https://img.shields.io/readthedocs/pip.svg?style=flat-square]]
 
@@ -13,13 +14,17 @@ works your dirty [[https://code.google.com/p/git-repo/][repo]] git repositories 
   - (easier to handle colors e.g.)
   - no dependency
 - KEY_RESIZE to react on terminal resizes
-
+- ansi colors are nice, but hard for clipping
+- signal handler for windowsize changes
 
 ** Todos
+*** DONE for history make redraw not always relayout
+CLOSED: [2022-06-05 Sun 12:08]
+- CLOSING NOTE [2022-06-05 Sun 12:08]
+*** TODO add base-directory parameter
 *** TODO make command to run on dirty repositories configurable
-*** TODO implement oper/history
+*** IN-PROGRESS implement oper/history
 **** TODO parse git commits
 **** TODO clickable links in git commits ... e.g. jira links or gerrit links
 **** TODO make scanning of logs parallel (and measure time here)
-
 
