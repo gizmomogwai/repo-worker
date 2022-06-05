@@ -6,6 +6,7 @@ import core.sys.posix.unistd;
 import core.sys.posix.sys.ioctl;
 import core.stdc.stdio;
 import core.stdc.ctype;
+import std.signals : Signal;
 
 import std.stdio;
 import std;
@@ -140,7 +141,6 @@ class Terminal {
             Operation.CLEAR_TERMINAL.execute ~
             State.CURSOR.to(Mode.LOW);
         w(data, "Cannot initialize terminal");
-
     }
     void resize(Component root) {
         auto d = dimension;
@@ -157,7 +157,7 @@ class Terminal {
         return this;
     }
 
-    void w(string data, lazy string errorMessage) {
+    final void w(string data, lazy string errorMessage) {
         (core.sys.posix.unistd.write(2, data.ptr, data.length) == data.length).errnoEnforce(
           errorMessage);
     }
@@ -574,7 +574,7 @@ abstract class Component {
 }
 
 class VSplit : Component {
-    float split;
+    SumType!(int, float) split;
     Component left;
     Component right;
     this(float split, Component left, Component right) {
@@ -582,10 +582,24 @@ class VSplit : Component {
         this.left = left;
         this.right = right;
     }
+    this(int split, Component left, Component right) {
+        this.split = split;
+        this.left = left;
+        this.right = right;
+    }
     override void resize(int left, int top, int right, int bottom) {
-        int splitPos = left + ((right-left)*split).to!int;
-        this.left.resize(left, top, splitPos , bottom);
-        this.right.resize(splitPos, top, right, bottom);
+        split.match!(
+          (int split) {
+              int splitPos = split;
+              this.left.resize(left, top, splitPos , bottom);
+              this.right.resize(splitPos, top, right, bottom);
+          },
+          (float split) {
+              int splitPos = left + ((right-left)*split).to!int;
+              this.left.resize(left, top, splitPos , bottom);
+              this.right.resize(splitPos, top, right, bottom);
+          }
+        );
         super.resize(left, top, right, bottom);
     }
     override void render(Terminal terminal) {
@@ -613,7 +627,6 @@ class Filled : Component {
         }
         terminal.xy(left, top).putString("0");
         terminal.xy(right-1, bottom-1).putString("1");
-        terminal.xy(left+10, top+10).putString("signalcount: %s".format(signalCount));
     }
 }
 
@@ -679,6 +692,7 @@ class List(T, alias stringTransform) : Component
         }
     }
     ScrollInfo scrollInfo;
+    mixin Signal!(T) selectionChanged;
     this(T[] model)
     {
         this.model = model;
@@ -700,10 +714,12 @@ class List(T, alias stringTransform) : Component
     override void up()
     {
         scrollInfo.up;
+        selectionChanged.emit(model[scrollInfo.selection]);
     }
     override void down()
     {
         scrollInfo.down(model, height);
+        selectionChanged.emit(model[scrollInfo.selection]);
     }
 }
 
@@ -788,10 +804,8 @@ class List(T, alias stringTransform) : Component
 +/
 
 extern(C) void signal(int sig, void function(int) );
-int signalCount;
 UiInterface theUi;
 extern(C) void windowSizeChangedSignalHandler(int sig) {
-    signalCount++;
     theUi.resized();
 }
 
@@ -812,7 +826,6 @@ class Ui(State) : UiInterface{
         {
             terminal.clear;
             root.render(terminal);
-            // status.render;
         }
         catch (Exception e)
         {

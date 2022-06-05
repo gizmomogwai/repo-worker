@@ -25,6 +25,25 @@ CLOSED: [2022-06-05 Sun 12:08]
 CLOSED: [2022-06-05 Sun 12:39]
 - CLOSING NOTE [2022-06-05 Sun 12:39]
 *** TODO make command to run on dirty repositories configurable
+*** TODO support gpgsig e.g. profiled
+commit e6b26dad781c97aacb53df639ac4ce7a1c52cfc1
+tree b1b3527bde494f93a94f2a6543591fd983e666a9
+author Christian Köstlin <christian.koestlin@gmail.com> 1653511740 +0200
+committer GitHub <noreply@github.com> 1653511740 +0200
+gpgsig -----BEGIN PGP SIGNATURE-----
+
+ wsBcBAABCAAQBQJijpY8CRBK7hj4Ov3rIwAAqPsIAJH8m5hMjPBd++lsntVDTBV1
+ 2X/K7YV7MPCqvbdoLUgNWhTdBaMNfs5BUSvxWtLriD8zamoJrcwBpZrAIPw2aWIW
+ 6p6obZFTnbYSQnobOm+cQNVZnu4jo6P9ahNqValYRFYcPMD3171VTpV3d44C48J7
+ h5YvCL+K29AF9+NvAXsv+l9qI/cnTZ0IUPRIzU8dmWpH+NGtImXQDJ+Z/R1poGeL
+ BAijusRXP0YpFzMFafdKcmUbF4EzIEynD9d7cXKB+MspGU16Q3Bv/ieHvCkz0i68
+ iDRoM360/Cg6UYeuB0TqbpNBN8WvL1Ed6VE9qJo4R6Ghe/FCWvolbQ1SWMVyHTc=
+ =cVpz
+ -----END PGP SIGNATURE-----
+
+
+    Initial commit
+*** TODO parse timezone correctly
 *** IN-PROGRESS implement oper/history
 **** TODO parse git commits
 **** TODO clickable links in git commits ... e.g. jira links or gerrit links

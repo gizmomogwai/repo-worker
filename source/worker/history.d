@@ -14,7 +14,7 @@ import profiled : theProfiler;
 import std.process;
 import std.parallelism : TaskPool;
 import std.algorithm : map, filter, sort, joiner;
-import std.range : take;
+import std.range : take, drop;
 
 auto parseGitDateTime(string[] epochAndZone) {
     return SysTime(unixTimeToStdTime(epochAndZone[0].to!long), UTC());
@@ -27,20 +27,23 @@ class GitCommit {
     SysTime authorDate;
     string committer;
     SysTime committerDate;
+    string title;
     string message;
-    this(Project project, string sha, string author, SysTime authorDate, string comitter, SysTime committerDate, string message) {
+    this(Project project, string sha, string author, SysTime authorDate, string comitter, SysTime committerDate, string title, string message) {
         this.project = project;
         this.sha = sha;
         this.author = author;
         this.authorDate = authorDate;
         this.committer = committer;
         this.committerDate = committerDate;
+        this.title = title;
         this.message = message;
     }
 
     static auto parse(Project project, string rawCommit) {
         GitCommit[] result = [];
         try {
+            import std.stdio; writeln("rawCommit: ", rawCommit);
             auto lines = rawCommit.split("\n");
             while (!lines.empty && lines.front.startsWith("commit")) {
                 string sha = lines.front.split(" ")[1];
@@ -58,15 +61,23 @@ class GitCommit {
                 auto committerLine = lines.front.split(" ").array;
                 auto committer = committerLine[1..$-2].join(" ");
                 auto committerDate = committerLine[$-2..$].parseGitDateTime;
+                lines.popFront;
                 lines.popFront; // skip line before git commit description
-
-                string message;
-                while (!lines.empty && !lines.front.startsWith("commit")) {
-                    message ~= "\n";
-                    message ~= lines.front;
+                string title;
+                if (!lines.empty && !lines.front.startsWith("commit")) {
+                    title = lines.front.drop(4).to!string;
                     lines.popFront;
                 }
-                result ~= new GitCommit(project, sha.to!string, author, authorDate, committer, committerDate, message);
+                string message;
+                while (!lines.empty && !lines.front.startsWith("commit")) {
+                    if (!message.empty)
+                    {
+                        message ~= "\n";
+                    }
+                    message ~= lines.front.drop(4);
+                    lines.popFront;
+                }
+                result ~= new GitCommit(project, sha.to!string, author, authorDate, committer, committerDate, title, message);
             }
             return result;
         }
@@ -76,7 +87,7 @@ class GitCommit {
         return null;
     }
     override string toString() {
-        return "GitCommit(%s, %s, %s, %s, %s)".format(project, sha, committerDate, author, message);
+        return "GitCommit(%s, %s, %s, %s, %s)".format(project, sha, committerDate, author, title, message);
     }
 }
 
@@ -167,6 +178,21 @@ class HistoryUi : Ui!(State) {
     }
 }
 
+class Details : Component {
+    GitCommit commit;
+    void newSelection(GitCommit commit) {
+        this.commit = commit;
+    }
+    override void render(Terminal t) {
+        if (commit !is null) {
+            t.xy(left, top).putString("Project: " ~ commit.project.shortPath);
+            t.xy(left, top+1).putString("SHA: " ~ commit.sha);
+            t.xy(left, top+2).putString("Author: " ~ commit.author);
+            t.xy(left, top+3).putString("Title: " ~ commit.title);
+            t.xy(left, top+4).putString("Message: " ~ commit.message);
+        }
+    }
+}
 
 void history(T)(T work, string gitTimeSpec) {
     {
@@ -189,13 +215,19 @@ void history(T)(T work, string gitTimeSpec) {
         KeyInput keyInput;
         scope terminal = new Terminal();
 
+        auto details = new Details();
+        auto list =  new List!(GitCommit,
+                               gitCommit => "%s %s %s %s"
+                               .format(gitCommit.committerDate.to!string.leftJustify(21).take(21).to!string.blue,
+                                       gitCommit.project.shortPath.leftJustify(20).take(20).to!string.red,
+                                       gitCommit.author.leftJustify(50).take(50).to!string.green,
+                                       gitCommit.title.leftJustify(30).take(30).to!string,
+                               ))(results);
+        list.selectionChanged.connect(&details.newSelection);
         auto ui = new HistoryUi(terminal,
-                                new VSplit(0.6,
-                                           new List!(GitCommit,
-                                                     gitCommit => "%s %s %s".format(gitCommit.committerDate.to!string.red,
-                                                                                    gitCommit.project.shortPath.leftJustify(10).take(10).to!string.blue,
-                                                                                    gitCommit.author.leftJustify(20).take(20)))(results),
-                                           new Filled("b")));
+                                new VSplit(127, // (+ 21 20 50 30 4 ) => 124
+                                           list,
+                                           details));
         ui.resize();
         while (!state.finished)
         {
