@@ -18,27 +18,29 @@ enum TraversalMode {
     WALK,
 }
 
-auto findGitsByWalking()
+auto findGitsByWalking(string baseDirectory)
 {
-    string base = ".".asAbsolutePath.asNormalizedPath.array;
-    return Work(base, dirEntries("", ".git", SpanMode.depth)
+    string base = baseDirectory.asAbsolutePath.asNormalizedPath.array;
+    return Work(base, dirEntries(base, ".git", SpanMode.depth)
             .filter!(f => f.isDir && f.name.endsWith(".git"))
             .map!(f => Project(base, "%s/..".format(f)))
             .array);
 }
 
-auto findGitsFromManifest()
+auto findGitsFromManifest(string baseDirectory)
 {
-    auto manifestDir = findProjectList(".");
+    auto manifestDir = findProjectList(baseDirectory);
     if (manifestDir == null)
     {
         throw new Exception("cannot find .repo/project.list");
     }
     auto f = File("%s/.repo/project.list".format(manifestDir), "r");
-    return Work(manifestDir, f.byLine().map!(line => Project(manifestDir,
-            "%s/%s".format(manifestDir, line.dup))).chain([
-                Project(manifestDir, "%s/%s".format(manifestDir, ".repo/manifests"))
-            ]).array);
+    // dfmt off
+    return Work(manifestDir,
+                f.byLine().map!(line => Project(manifestDir, "%s/%s".format(manifestDir, line.dup)))
+                .chain([Project(manifestDir, "%s/%s".format(manifestDir, ".repo/manifests"))])
+                .array);
+    // dfmt on
 }
 
 auto getRulingDirectories(string start)

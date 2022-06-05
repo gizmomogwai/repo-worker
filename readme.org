@@ -21,7 +21,9 @@ works your dirty [[https://code.google.com/p/git-repo/][repo]] git repositories 
 *** DONE for history make redraw not always relayout
 CLOSED: [2022-06-05 Sun 12:08]
 - CLOSING NOTE [2022-06-05 Sun 12:08]
-*** TODO add base-directory parameter
+*** DONE add base-directory parameter
+CLOSED: [2022-06-05 Sun 12:39]
+- CLOSING NOTE [2022-06-05 Sun 12:39]
 *** TODO make command to run on dirty repositories configurable
 *** IN-PROGRESS implement oper/history
 **** TODO parse git commits

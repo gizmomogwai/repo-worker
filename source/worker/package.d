@@ -74,6 +74,9 @@ struct Arguments
         @(NamedArgument("traversalMode", "mode").Description("Find subprojects with repo or filesystem."))
         TraversalMode traversalMode = TraversalMode.REPO;
 
+        @(NamedArgument("baseDirectory", "base", "dir").Description("Basedirectory."))
+        string baseDirectory = ".";
+
         @(NamedArgument("logLevel", "l").Description("Set logging level."))
         LogLevel logLevel;
     }
@@ -109,19 +112,23 @@ int worker_(Arguments arguments)
         _ => false
     )) return 0;
 
-    auto projects = arguments.traversalMode == TraversalMode.WALK ? findGitsByWalking() : findGitsFromManifest();
+    auto projects = arguments.traversalMode == TraversalMode.WALK ? findGitsByWalking(arguments.baseDirectory) : findGitsFromManifest(arguments.baseDirectory);
 
     arguments.subcommand.match!(
-      (Review r) {
+      (Review r)
+      {
           projects.reviewChanges(r.command);
       },
-      (Upload u) {
+      (Upload u)
+      {
           projects.upload(arguments.dryRun, u.topic, u.hashtag, u.changeSetType);
       },
-      (Execute e) {
+      (Execute e)
+      {
           projects.executeCommand(e.command);
       },
-      (Log l) {
+      (Log l)
+      {
           projects.history(l.gitDurationSpec);
       },
       (_) {}
