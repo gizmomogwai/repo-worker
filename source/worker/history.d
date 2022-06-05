@@ -224,10 +224,14 @@ void history(T)(T work, string gitTimeSpec) {
                                        gitCommit.title.leftJustify(30).take(30).to!string,
                                ))(results);
         list.selectionChanged.connect(&details.newSelection);
+        auto listAndDetails = new VSplit(127, // (+ 21 20 50 30 4 ) => 124
+                                         list,
+                                         details);
+        auto globalStatus = new Text("Found %s commits in %s repositories matching criteria '%s'".format(results.length, work.projects.length, gitTimeSpec));
+        auto root = new HSplit(-1, listAndDetails, globalStatus);
+
         auto ui = new HistoryUi(terminal,
-                                new VSplit(127, // (+ 21 20 50 30 4 ) => 124
-                                           list,
-                                           details));
+                                root);
         ui.resize();
         while (!state.finished)
         {

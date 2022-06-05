@@ -44,6 +44,8 @@ gpgsig -----BEGIN PGP SIGNATURE-----
 
     Initial commit
 *** TODO parse timezone correctly
+*** TODO implement -int splits for vsplit
+*** TODO implement proper event bubbling or somethign else (e.g. only the details view gets the events, or some signal slot thing)
 *** IN-PROGRESS implement oper/history
 **** TODO parse git commits
 **** TODO clickable links in git commits ... e.g. jira links or gerrit links

@@ -573,6 +573,34 @@ abstract class Component {
     }
 }
 
+class HSplit : Component {
+    int split;
+    Component top;
+    Component bottom;
+    this(int split, Component top, Component bottom) {
+        this.split = split;
+        this.top = top;
+        this.bottom = bottom;
+    }
+    override void resize(int left, int top, int right, int bottom) {
+        int splitPos = split;
+        if (split < 0) {
+            splitPos = bottom-top+split;
+        }
+        this.top.resize(left, top, right, splitPos);
+        this.bottom.resize(left, splitPos, right, bottom);
+    }
+    override void render(Terminal terminal) {
+        this.top.render(terminal);
+        this.bottom.render(terminal);
+    }
+    override void up() {
+        top.up();
+    }
+    override void down() {
+        top.down();
+    }
+}
 class VSplit : Component {
     SumType!(int, float) split;
     Component left;
@@ -630,6 +658,15 @@ class Filled : Component {
     }
 }
 
+class Text : Component {
+    string content;
+    this(string content) {
+        this.content = content;
+    }
+    override void render(Terminal terminal) {
+        terminal.xy(left, top).putString(content.takeIgnoreAnsiEscapes(width));
+    }
+}
 string takeIgnoreAnsiEscapes(string s, uint length) {
     string result;
     uint count = 0;
