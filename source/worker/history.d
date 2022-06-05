@@ -84,15 +84,15 @@ auto historyOfProject(Tuple!(Project, "project", string, "gitTimeSpec") projectA
 {
     Project project = projectAndTimeSpec.project;
     string gitTimeSpec = projectAndTimeSpec.gitTimeSpec;
-    "Working on: %s".format(project.path).trace;
-    auto trace = theProfiler.start("git log of project '%s'".format(project.path));
+    "Working on: %s".format(project.path).info;
+    auto trace = theProfiler.start("git log of project '%s'".format(project.shortPath));
     auto command = "git log --since='%s' --pretty=raw".format(gitTimeSpec);
     auto result = command.executeShell(null, std.process.Config.none, size_t.max, project.path);
     if (result.status != 0) {
         throw new Exception("'%s' failed in '%s' with '%s', output '%s'".format(command, project.path, result.status, result.output));
     }
     auto r = GitCommit.parse(project, result.output);
-    "Project: %s commits: %s".format(project.path, r.length).trace;
+    "Project: %s commits: %s".format(project.path, r.length).info;
     return r;
 }
 
@@ -173,10 +173,9 @@ void history(T)(T work, string gitTimeSpec) {
         theProfiler.start("Collecting history of gits");
         auto taskPool = new TaskPool();
         auto projects = work.projects.map!(project => tuple!("project", "gitTimeSpec")(project, gitTimeSpec)).array;
-        "History for %s projects".format(projects.length).trace();
-        /+
-         auto results = projects.map!(historyOfProject).array;
-         +/
+        "History for %s projects".format(projects.length).info();
+
+        // auto results = projects.map!(historyOfProject).joiner.array;
         auto results = taskPool
             .amap!(historyOfProject)(projects)
             .filter!(commits => commits.length > 0)
@@ -184,6 +183,7 @@ void history(T)(T work, string gitTimeSpec) {
             .array
             .sort!((a, b) => a.committerDate > b.committerDate)
             .array;
+
         taskPool.finish();
 
         KeyInput keyInput;
