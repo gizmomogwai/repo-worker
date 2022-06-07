@@ -1,0 +1,68 @@
+commit b18abbbb4168999794bb7325f3a27ef03923e2d3
+tree 109a75951a5c1d744d8f8d441fa833b1c7414eaf
+parent 3e0ae816fb43824f302e4424418e15486c600024
+author Christian Koestlin <christian.koestlin@gmail.com> 1653514176 +0200
+committer Christian Koestlin <christian.koestlin@gmail.com> 1653514176 +0200
+
+    Protect also printing of the events with a mutex
+
+commit 3e0ae816fb43824f302e4424418e15486c600024
+tree 06d25357cb47a9fa333782bb2521942f84850a34
+parent d7c830a34f611fde6ed8d5267974e89e0205bdba
+author Christian Koestlin <christian.koestlin@gmail.com> 1653514094 +0200
+committer Christian Koestlin <christian.koestlin@gmail.com> 1653514094 +0200
+
+    Cleanup imports
+
+commit d7c830a34f611fde6ed8d5267974e89e0205bdba
+tree c147e997bbe6168cc4b81d6eb4fad7ef611fb3f6
+parent d208832801dfd48ecbc96a9eb55466eaafda5b3f
+author Christian Koestlin <christian.koestlin@gmail.com> 1653513666 +0200
+committer Christian Koestlin <christian.koestlin@gmail.com> 1653513916 +0200
+
+    Add readme and screenshot
+
+commit d208832801dfd48ecbc96a9eb55466eaafda5b3f
+tree c215691e33e01ae27c64b38209f0e1ad872de98d
+parent ce02ab46998ef3d86d1c9c272045dc0b665d921b
+author Christian Koestlin <christian.koestlin@gmail.com> 1653511666 +0200
+committer Christian Koestlin <christian.koestlin@gmail.com> 1653511814 +0200
+
+    Run through dfmt
+
+commit ce02ab46998ef3d86d1c9c272045dc0b665d921b
+tree b0a7447c7bfac0aa03d615d756b44c01021e8560
+parent aedad6e1b5a57f499654bea9887c806bca273c52
+author Christian Koestlin <christian.koestlin@gmail.com> 1652215011 +0200
+committer Christian Koestlin <christian.koestlin@gmail.com> 1653511814 +0200
+
+    Simplify API
+    
+    - only support complete events
+    - use Unique + destructor
+
+commit aedad6e1b5a57f499654bea9887c806bca273c52
+tree 871e2873b0fa6d4285d39cb729a5ff3359d7ec51
+parent e6b26dad781c97aacb53df639ac4ce7a1c52cfc1
+author Christian Koestlin <christian.koestlin@gmail.com> 1652130280 +0200
+committer Christian Koestlin <christian.koestlin@gmail.com> 1653511809 +0200
+
+    Import initial version to git
+
+commit e6b26dad781c97aacb53df639ac4ce7a1c52cfc1
+tree b1b3527bde494f93a94f2a6543591fd983e666a9
+author Christian Köstlin <christian.koestlin@gmail.com> 1653511740 +0200
+committer GitHub <noreply@github.com> 1653511740 +0200
+gpgsig -----BEGIN PGP SIGNATURE-----
+ 
+ wsBcBAABCAAQBQJijpY8CRBK7hj4Ov3rIwAAqPsIAJH8m5hMjPBd++lsntVDTBV1
+ 2X/K7YV7MPCqvbdoLUgNWhTdBaMNfs5BUSvxWtLriD8zamoJrcwBpZrAIPw2aWIW
+ 6p6obZFTnbYSQnobOm+cQNVZnu4jo6P9ahNqValYRFYcPMD3171VTpV3d44C48J7
+ h5YvCL+K29AF9+NvAXsv+l9qI/cnTZ0IUPRIzU8dmWpH+NGtImXQDJ+Z/R1poGeL
+ BAijusRXP0YpFzMFafdKcmUbF4EzIEynD9d7cXKB+MspGU16Q3Bv/ieHvCkz0i68
+ iDRoM360/Cg6UYeuB0TqbpNBN8WvL1Ed6VE9qJo4R6Ghe/FCWvolbQ1SWMVyHTc=
+ =cVpz
+ -----END PGP SIGNATURE-----
+ 
+
+    Initial commit

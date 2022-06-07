@@ -324,11 +324,11 @@ string calcUploadText(UploadInfo[Branch] uploadInfos)
     UploadInfo[Branch] uploadInfos;
     auto b = Branch(Project("base", "test"), "default", "remote", "master");
     uploadInfos[b] = UploadInfo(b, Commit("123456", "message"));
-    auto expected = q"[# PROJECT test
+    auto expected = q"[# PROJECT /test
 #   BRANCH default -> remote/master
 #     123456 - message
 ]";
-    uploadInfos.calcUploadText.shouldEqual(expected);
+    uploadInfos.calcUploadText.should == expected;
 }
 
 void upload(T)(T work, bool dry, string topic, string hashtag, ChangeSetType changeSetType)
