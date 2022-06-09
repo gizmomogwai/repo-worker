@@ -24,11 +24,16 @@ CLOSED: [2022-06-05 Sun 12:08]
 *** DONE add base-directory parameter
 CLOSED: [2022-06-05 Sun 12:39]
 - CLOSING NOTE [2022-06-05 Sun 12:39]
+*** DONE implement proper components + "graphical context"
+CLOSED: [2022-06-10 Fri 00:38]
+- CLOSING NOTE [2022-06-10 Fri 00:38]
 *** TODO make command to run on dirty repositories configurable
 *** DONE support gpgsig e.g. profiled
 CLOSED: [2022-06-07 Tue 23:12]
 - CLOSING NOTE [2022-06-07 Tue 23:12]
-*** TODO crop details textlines
+*** DONE crop details textlines
+CLOSED: [2022-06-10 Fri 00:39]
+- CLOSING NOTE [2022-06-10 Fri 00:39]
 *** DONE parse timezone correctly
 CLOSED: [2022-06-07 Tue 21:43]
 - CLOSING NOTE [2022-06-07 Tue 21:43] \\
@@ -36,7 +41,12 @@ CLOSED: [2022-06-07 Tue 21:43]
 *** TODO implement -int splits for vsplit
 *** TODO implement proper event bubbling or somethign else (e.g. only the details view gets the events, or some signal slot thing)
 *** IN-PROGRESS implement oper/history
-**** TODO parse git commits
+**** DONE parse git commits
+CLOSED: [2022-06-08 Wed 09:37]
+- CLOSING NOTE [2022-06-08 Wed 09:37]
 **** TODO clickable links in git commits ... e.g. jira links or gerrit links
-**** TODO make scanning of logs parallel (and measure time here)
+**** DONE make scanning of logs parallel (and measure time here)
+CLOSED: [2022-06-08 Wed 09:38]
 
+- CLOSING NOTE [2022-06-08 Wed 09:38] \\
+  amap for the win

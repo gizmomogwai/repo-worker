@@ -142,11 +142,6 @@ class Terminal {
             State.CURSOR.to(Mode.LOW);
         w(data, "Cannot initialize terminal");
     }
-    void resize(Component root) {
-        auto d = dimension;
-        root.resize(0, 0, d.width-1, d.height-1);
-        root.render(this);
-    }
     auto putString(string s) {
         w(s, "Cannot write string");
         return this;
@@ -552,24 +547,18 @@ int byteCount(int k)
 abstract class Component {
     int left;
     int top;
-    int right;
-    int bottom;
-    void resize(int left, int top, int right, int bottom) {
+    int width;
+    int height;
+    void resize(int left, int top, int width, int height) {
         this.left = left;
         this.top = top;
-        this.right = right;
-        this.bottom = bottom;
+        this.width = width;
+        this.height = height;
     }
-    abstract void render(Terminal terminal);
+    abstract void render(Context context);
     void up() {
     }
     void down() {
-    }
-    int height() {
-        return bottom-top;
-    }
-    int width() {
-        return right-left;
     }
 }
 
@@ -582,17 +571,17 @@ class HSplit : Component {
         this.top = top;
         this.bottom = bottom;
     }
-    override void resize(int left, int top, int right, int bottom) {
+    override void resize(int left, int top, int width, int height) {
         int splitPos = split;
         if (split < 0) {
-            splitPos = bottom-top+split;
+            splitPos = height+split;
         }
-        this.top.resize(left, top, right, splitPos);
-        this.bottom.resize(left, splitPos, right, bottom);
+        this.top.resize(left, top, width, splitPos);
+        this.bottom.resize(left, top+splitPos, width, height-splitPos);
     }
-    override void render(Terminal terminal) {
-        this.top.render(terminal);
-        this.bottom.render(terminal);
+    override void render(Context context) {
+        this.top.render(context.forChild(this.top));
+        this.bottom.render(context.forChild(this.bottom));
     }
     override void up() {
         top.up();
@@ -602,37 +591,26 @@ class HSplit : Component {
     }
 }
 class VSplit : Component {
-    SumType!(int, float) split;
+    int split;
     Component left;
     Component right;
-    this(float split, Component left, Component right) {
-        this.split = split;
-        this.left = left;
-        this.right = right;
-    }
     this(int split, Component left, Component right) {
         this.split = split;
         this.left = left;
         this.right = right;
     }
-    override void resize(int left, int top, int right, int bottom) {
-        split.match!(
-          (int split) {
-              int splitPos = split;
-              this.left.resize(left, top, splitPos , bottom);
-              this.right.resize(splitPos, top, right, bottom);
-          },
-          (float split) {
-              int splitPos = left + ((right-left)*split).to!int;
-              this.left.resize(left, top, splitPos , bottom);
-              this.right.resize(splitPos, top, right, bottom);
-          }
-        );
-        super.resize(left, top, right, bottom);
+    override void resize(int left, int top, int width, int height) {
+        int splitPos = split;
+        if (split < 0) {
+            splitPos = width + split;
+        }
+        this.left.resize(left, top, splitPos, height);
+        this.right.resize(left+splitPos, top, width-split, height);
+        super.resize(left, top, width, height);
     }
-    override void render(Terminal terminal) {
-        left.render(terminal);
-        right.render(terminal);
+    override void render(Context context) {
+        left.render(context.forChild(left));
+        right.render(context.forChild(right));
     }
     override void up() {
         left.up();
@@ -647,14 +625,14 @@ class Filled : Component {
     this(string what) {
         this.what = what;
     }
-    override void render(Terminal terminal) {
-        for (int y=top; y<bottom; y++) {
-            for (int x=left; x<right; x++) {
-                terminal.xy(x, y).putString(what);
+    override void render(Context context) {
+        for (int y=0; y<height; y++) {
+            for (int x=0; x<width; x++) {
+                context.putString(x, y, what);
             }
         }
-        terminal.xy(left, top).putString("0");
-        terminal.xy(right-1, bottom-1).putString("1");
+        context.putString(0, 0, "0");
+        context.putString(width-1, height-1, "1");
     }
 }
 
@@ -663,8 +641,8 @@ class Text : Component {
     this(string content) {
         this.content = content;
     }
-    override void render(Terminal terminal) {
-        terminal.xy(left, top).putString(content.takeIgnoreAnsiEscapes(width));
+    override void render(Context context) {
+        context.putString(0, 0, content.takeIgnoreAnsiEscapes(width));
     }
 }
 string takeIgnoreAnsiEscapes(string s, uint length) {
@@ -718,7 +696,7 @@ class List(T, alias stringTransform) : Component
         }
         void down(T[] model, int height)
         {
-            if (selection < model.length - 1)
+            if (selection + 1 < model.length)
             {
                 selection++;
                 while (selection >= offset + height)
@@ -735,17 +713,15 @@ class List(T, alias stringTransform) : Component
         this.model = model;
         this.scrollInfo = ScrollInfo(0, 0);
     }
-    override void render(Terminal terminal)
+    override void render(Context context)
     {
         for (int i=0; i<height; ++i)
         {
             auto index = i+scrollInfo.offset;
             if (index >= model.length) return;
             auto text = (index == scrollInfo.selection ? "> %s" : "  %s")
-                .format(stringTransform(model[index]))
-                .takeIgnoreAnsiEscapes(width())
-                .to!string;
-            terminal.xy(left, top+i).putString(text);
+                .format(stringTransform(model[index]));
+            context.putString(0, i, text);
         }
     }
     override void up()
@@ -756,6 +732,9 @@ class List(T, alias stringTransform) : Component
     override void down()
     {
         scrollInfo.down(model, height);
+        selectionChanged.emit(model[scrollInfo.selection]);
+    }
+    void select() {
         selectionChanged.emit(model[scrollInfo.selection]);
     }
 }
@@ -842,12 +821,33 @@ class List(T, alias stringTransform) : Component
 
 extern(C) void signal(int sig, void function(int) );
 UiInterface theUi;
-extern(C) void windowSizeChangedSignalHandler(int sig) {
+extern(C) void windowSizeChangedSignalHandler(int) {
     theUi.resized();
 }
 
 abstract class UiInterface {
     void resized();
+}
+class Context {
+    Terminal terminal;
+    int left;
+    int top;
+    int width;
+    int height;
+    this(Terminal terminal, int left, int top, int width, int height) {
+        this.terminal = terminal;
+        this.left = left;
+        this.top = top;
+        this.width = width;
+        this.height = height;
+    }
+    auto forChild(Component c) {
+        return new Context(terminal, c.left, c.top, c.width, c.height);
+    }
+    auto putString(int x, int y, string s) {
+        terminal.xy(left + x, top + y).putString(s.takeIgnoreAnsiEscapes(width));
+        return this;
+    }
 }
 class Ui(State) : UiInterface{
     Terminal terminal;
@@ -862,7 +862,9 @@ class Ui(State) : UiInterface{
         try
         {
             terminal.clear;
-            root.render(terminal);
+            scope context =
+                new Context(terminal, root.left, root.top, root.width, root.height);
+            root.render(context);
         }
         catch (Exception e)
         {

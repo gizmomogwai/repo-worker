@@ -18,7 +18,7 @@ import std.algorithm : map, filter, sort, joiner;
 import std.range : take, drop;
 
 // copied from phobos std.datetime.timezone.d as its package protected
-static immutable(SimpleTimeZone) SimpleTimeZone_fromISOString(S)(S isoString) @safe pure
+static immutable(SimpleTimeZone) simpleTimeZonefromISOString(S)(S isoString) @safe pure
 {
     import std.algorithm.searching : startsWith;
     import std.conv : text, to, ConvException;
@@ -62,7 +62,7 @@ static immutable(SimpleTimeZone) SimpleTimeZone_fromISOString(S)(S isoString) @s
 }
 
 auto parseGitDateTime(string[] epochAndZone) {
-    auto tz = epochAndZone[1].SimpleTimeZone_fromISOString;
+    auto tz = epochAndZone[1].simpleTimeZonefromISOString;
     return SysTime(unixTimeToStdTime(epochAndZone[0].to!long), tz);
 }
 
@@ -79,7 +79,14 @@ class GitCommit {
         this.project = project;
         this.sha = sha;
     }
-    this(Project project, string sha, string author, SysTime authorDate, string comitter, SysTime committerDate, string title, string message) {
+    this(Project project,
+         string sha,
+         string author,
+         SysTime authorDate,
+         string comitter,
+         SysTime committerDate,
+         string title,
+         string message) {
         this.project = project;
         this.sha = sha;
         this.author = author;
@@ -92,62 +99,56 @@ class GitCommit {
 
     static auto parseCommits(Project project, string rawCommits) {
         GitCommit[] result = [];
-        try {
-            auto lines = rawCommits.split("\n");
-            GitCommit current = null;
-            while (!lines.empty) {
-                auto line = lines.front;
-                if (line.startsWith("commit ")) {
-                    if (current !is null) {
-                        result ~= current;
-                    }
-                    current = new GitCommit(project, line.split[1]);
+        auto lines = rawCommits.split("\n");
+        GitCommit current = null;
+        while (!lines.empty) {
+            auto line = lines.front;
+            if (line.startsWith("commit ")) {
+                if (current !is null) {
+                    result ~= current;
                 }
-                if (line.startsWith("parent ")) {
-                    // ignore
-                }
-                if (line.startsWith("tree ")) {
-                    // ignore
-                }
-                if (line.startsWith("author ")) {
-                    auto components = line.split(" ").array;
-                    current.author = components[1..$-2].join(" ");
-                    current.authorDate = components[$-2..$].parseGitDateTime;
-                }
-                if (line.startsWith("committer ")) {
-                    auto components = line.split(" ").array;
-                    current.committer = components[1..$-2].join(" ");
-                    current.committerDate = components[$-2..$].parseGitDateTime;
-                }
+                current = new GitCommit(project, line.split[1]);
+            }
+            if (line.startsWith("parent ")) {
+                // ignore
+            }
+            if (line.startsWith("tree ")) {
+                // ignore
+            }
+            if (line.startsWith("author ")) {
+                auto components = line.split(" ").array;
+                current.author = components[1..$-2].join(" ");
+                current.authorDate = components[$-2..$].parseGitDateTime;
+            }
+            if (line.startsWith("committer ")) {
+                auto components = line.split(" ").array;
+                current.committer = components[1..$-2].join(" ");
+                current.committerDate = components[$-2..$].parseGitDateTime;
+            }
 
-                if (line.startsWith("gpgsig ")) {
-                    // skip till next
-                    while (!lines.front.empty) {
-                        lines.popFront;
-                    }
+            if (line.startsWith("gpgsig ")) {
+                // skip till next
+                while (!lines.front.empty) {
+                    lines.popFront;
                 }
-                if (line.startsWith("    ")) {
-                    if (current.title == null) {
-                        current.title = line.drop(4).to!string;
+            }
+            if (line.startsWith("    ")) {
+                if (current.title == null) {
+                    current.title = line.drop(4).to!string;
+                } else {
+                    if (!current.message.empty) {
+                        current.message ~= "\n";
                     } else {
-                        if (!current.message.empty) {
-                            current.message ~= "\n";
-                        } else {
-                            current.message ~= line.drop(4).to!string;
-                        }
+                        current.message ~= line.drop(4).to!string;
                     }
                 }
-                lines.popFront;
             }
-            if (current !is null) {
-                result ~= current;
-            }
-            return result;
+            lines.popFront;
         }
-        catch (Throwable t) {
-            "Problem with %s at %s, %s".format(project, rawCommits, t).error;
+        if (current !is null) {
+            result ~= current;
         }
-        return null;
+        return result;
     }
     override string toString() {
         return "GitCommit(project: %s, sha: %s, committer: %s, committerDate: %s, author: %s, authorDate: %s, title: %s, message: %s)".format(project, sha, committer, committerDate, author, authorDate, title, message);
@@ -259,22 +260,22 @@ class Details : Component
     {
         this.commit = commit;
     }
-    override void render(Terminal t)
+    override void render(Context context)
     {
         if (commit !is null)
         {
             int line = 0;
-            t.xy(left, top+line++).putString("Project: ".bold ~ commit.project.shortPath);
-            t.xy(left, top+line++).putString("SHA: ".bold ~ commit.sha);
-            t.xy(left, top+line++).putString("Author: ".bold ~ commit.author);
-            t.xy(left, top+line++).putString("Author date: ".bold ~ commit.authorDate.to!string);
-            t.xy(left, top+line++).putString("Committer: ".bold ~ commit.committer);
-            t.xy(left, top+line++).putString("Committer date: ".bold ~ commit.committerDate.to!string);
-            t.xy(left, top+line++).putString("Delta between authoring and committing: ".bold ~ (commit.committerDate-commit.authorDate).to!string);
-            t.xy(left, top+line++).putString("Title: ".bold ~ commit.title);
+            context.putString(0, line++, "Project: ".bold ~ commit.project.shortPath);
+            context.putString(0, line++, "SHA: ".bold ~ commit.sha);
+            context.putString(0, line++, "Author: ".bold ~ commit.author);
+            context.putString(0, line++, "Author date: ".bold ~ commit.authorDate.to!string);
+            context.putString(0, line++, "Committer: ".bold ~ commit.committer);
+            context.putString(0, line++, "Committer date: ".bold ~ commit.committerDate.to!string);
+            context.putString(0, line++, "Delta between authoring and committing: ".bold ~ (commit.committerDate-commit.authorDate).to!string);
+            context.putString(0, line++, "Title: ".bold ~ commit.title);
             if (!commit.message.empty)
             {
-                t.xy(left, top+line++).putString("Message: ".bold ~ commit.message);
+                context.putString(0, line++, "Message: ".bold ~ commit.message);
             }
         }
     }
@@ -315,6 +316,7 @@ void history(T)(T work, string gitTimeSpec)
                                    gitCommit.title.leftJustify(30).take(30).to!string,
                            ))(results);
     list.selectionChanged.connect(&details.newSelection);
+    list.select();
     auto listAndDetails = new VSplit(132, // (+ 26 20 50 30 4 2)
                                      list,
                                      details);
