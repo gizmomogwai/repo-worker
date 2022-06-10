@@ -1,6 +1,6 @@
 module worker.upload;
 
-import worker.common : Project, Commit;
+import worker.common : Project, Commit, ChangeSetType;
 import std.algorithm : map, filter;
 import std.string : format, split, strip, replace, join;
 import std.regex : ctRegex, matchFirst;
@@ -12,14 +12,6 @@ import std.file;
 import std.process : environment, spawnProcess, wait;
 import std.file : remove;
 import std.stdio : File;
-
-enum ChangeSetType
-{
-    NORMAL,
-    WIP,
-    PRIVATE,
-    DRAFT,
-}
 
 struct UploadInfo
 {

@@ -8,6 +8,14 @@ import std.path : asAbsolutePath, asNormalizedPath;
 import std.array : array;
 import std.range : chain;
 
+enum ChangeSetType
+{
+    NORMAL,
+    WIP,
+    PRIVATE,
+    DRAFT,
+}
+
 struct Command
 {
     // names end with _ because the fluid api needs methods with the same name

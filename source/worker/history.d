@@ -3,7 +3,7 @@ module worker.history;
 import terminal;
 import colored;
 import worker.common : Project;
-
+import worker.arguments : Log;
 import core.time : dur;
 import std.datetime : SysTime, unixTimeToStdTime, SimpleTimeZone;
 import std.typecons : Tuple, tuple;
@@ -168,18 +168,25 @@ unittest {
     commits[6].message.should == "";
 }
 
-auto historyOfProject(Tuple!(Project, "project", string, "gitTimeSpec") projectAndTimeSpec)
+auto historyOfProject(Tuple!(Project, "project", Log, "log") projectAndParameters)
 {
-    Project project = projectAndTimeSpec.project;
-    string gitTimeSpec = projectAndTimeSpec.gitTimeSpec;
+    Project project = projectAndParameters.project;
+    string gitDurationSpec = projectAndParameters.log.gitDurationSpec;
     auto trace = theProfiler.start("git log of project '%s'".format(project.shortPath));
+    string[] args = [
+      "log",
+      "--pretty=raw",
+      "--since=%s".format(gitDurationSpec),
+    ];
+    if (!projectAndParameters.log.author.empty)
+    {
+        args ~= "--author=%s".format(projectAndParameters.log.author);
+    }
     return project
-        .git("log", "--pretty=raw", "--since='%s'".format(gitTimeSpec))
+        .git(args)
         .message("Get logs")
         .run
-        .map!((string output) {
-                return GitCommit.parseCommits(project, output);
-            })
+        .map!(output => GitCommit.parseCommits(project, output))
         .front;
 }
 
@@ -280,14 +287,14 @@ class Details : Component
     }
 }
 
-auto collectData(T)(T work, string gitTimeSpec) {
+auto collectData(T)(T work, Log log) {
     auto process = theProfiler.start("Collecting history of gits");
     auto taskPool = new TaskPool();
     scope (exit)
     {
         taskPool.finish;
     }
-    auto projects = work.projects.map!(project => tuple!("project", "gitTimeSpec")(project, gitTimeSpec)).array;
+    auto projects = work.projects.map!(project => tuple!("project", "log")(project, log)).array;
     "History for %s projects".format(projects.length).info();
 
     // auto results = projects.map!(historyOfProject).joiner.array;
@@ -300,7 +307,7 @@ auto collectData(T)(T work, string gitTimeSpec) {
         .array;
 }
 
-void tui(T, Results)(T work, string gitTimeSpec, Results results)
+void tui(T, Results)(T work, Log log, Results results)
 {
     KeyInput keyInput;
     scope terminal = new Terminal();
@@ -314,11 +321,17 @@ void tui(T, Results)(T work, string gitTimeSpec, Results results)
                                    gitCommit.title.leftJustify(30).take(30).to!string,
                            ))(results);
     list.selectionChanged.connect(&details.newSelection);
-    list.select();
+    if (!results.empty) {
+        list.select();
+    }
     auto listAndDetails = new VSplit(132, // (+ 26 20 50 30 4 2)
                                      list,
                                      details);
-    auto globalStatus = new Text("Found %s commits in %s repositories matching criteria '%s'".format(results.length, work.projects.length, gitTimeSpec));
+    string statusString = "Found %s commits in %s repositories matching criteria since='%s'".format(results.length, work.projects.length, log.gitDurationSpec);
+    if (!log.author.empty) {
+        statusString ~= " and author='%s'".format(log.author);
+    }
+    auto globalStatus = new Text(statusString);
     auto root = new HSplit(-1, listAndDetails, globalStatus);
 
     auto ui = new HistoryUi(terminal,
@@ -337,8 +350,8 @@ void tui(T, Results)(T work, string gitTimeSpec, Results results)
     }
 }
 
-void history(T)(T work, string gitTimeSpec)
+void history(T)(T work, Log log)
 {
-    auto results = collectData(work, gitTimeSpec);
-    tui(work, gitTimeSpec, results);
+    auto results = collectData(work, log);
+    tui(work, log, results);
 }

@@ -726,15 +726,24 @@ class List(T, alias stringTransform) : Component
     }
     override void up()
     {
+        if (model.empty) {
+            return;
+        }
         scrollInfo.up;
         selectionChanged.emit(model[scrollInfo.selection]);
     }
     override void down()
     {
+        if (model.empty) {
+            return;
+        }
         scrollInfo.down(model, height);
         selectionChanged.emit(model[scrollInfo.selection]);
     }
     void select() {
+        if (model.empty) {
+            return;
+        }
         selectionChanged.emit(model[scrollInfo.selection]);
     }
 }
