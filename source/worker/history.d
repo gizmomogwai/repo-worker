@@ -172,16 +172,15 @@ auto historyOfProject(Tuple!(Project, "project", string, "gitTimeSpec") projectA
 {
     Project project = projectAndTimeSpec.project;
     string gitTimeSpec = projectAndTimeSpec.gitTimeSpec;
-    "Working on: %s".format(project.path).info;
     auto trace = theProfiler.start("git log of project '%s'".format(project.shortPath));
-    auto command = "git log --since='%s' --pretty=raw".format(gitTimeSpec);
-    auto result = command.executeShell(null, std.process.Config.none, size_t.max, project.path);
-    if (result.status != 0) {
-        throw new Exception("'%s' failed in '%s' with '%s', output '%s'".format(command, project.path, result.status, result.output));
-    }
-    auto r = GitCommit.parseCommits(project, result.output);
-    "Project: %s commits: %s".format(project.path, r.length).info;
-    return r;
+    return project
+        .git("log", "--pretty=raw", "--since='%s'".format(gitTimeSpec))
+        .message("Get logs")
+        .run
+        .map!((string output) {
+                return GitCommit.parseCommits(project, output);
+            })
+        .front;
 }
 
 struct State
@@ -271,7 +270,7 @@ class Details : Component
             context.putString(0, line++, "Author date: ".bold ~ commit.authorDate.to!string);
             context.putString(0, line++, "Committer: ".bold ~ commit.committer);
             context.putString(0, line++, "Committer date: ".bold ~ commit.committerDate.to!string);
-            context.putString(0, line++, "Delta between authoring and committing: ".bold ~ (commit.committerDate-commit.authorDate).to!string);
+            context.putString(0, line++, "Δ: ".bold ~ (commit.committerDate-commit.authorDate).to!string);
             context.putString(0, line++, "Title: ".bold ~ commit.title);
             if (!commit.message.empty)
             {
@@ -301,9 +300,8 @@ auto collectData(T)(T work, string gitTimeSpec) {
         .array;
 }
 
-void history(T)(T work, string gitTimeSpec)
+void tui(T, Results)(T work, string gitTimeSpec, Results results)
 {
-    auto results = collectData(work, gitTimeSpec);
     KeyInput keyInput;
     scope terminal = new Terminal();
 
@@ -337,4 +335,10 @@ void history(T)(T work, string gitTimeSpec)
         {
         }
     }
+}
+
+void history(T)(T work, string gitTimeSpec)
+{
+    auto results = collectData(work, gitTimeSpec);
+    tui(work, gitTimeSpec, results);
 }

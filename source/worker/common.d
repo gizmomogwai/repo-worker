@@ -68,11 +68,11 @@ struct Project
         this.base = base.asAbsolutePath.asNormalizedPath.array;
         if (s[0] == '/')
         {
-            this.path = s;
+            this.path = s.asAbsolutePath.asNormalizedPath.array;
         }
         else
         {
-            this.path = this.base ~ "/" ~ s;
+            this.path = (this.base ~ "/" ~ s).asAbsolutePath.asNormalizedPath.array;
         }
     }
 
