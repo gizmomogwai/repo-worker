@@ -562,14 +562,18 @@ abstract class Component {
     }
 }
 
-class HSplit : Component {
+abstract class Container : Component {
+    Component[] children;
+    this(Component[] children) {
+        this.children = children;
+    }
+}
+
+class HSplit : Container {
     int split;
-    Component top;
-    Component bottom;
     this(int split, Component top, Component bottom) {
+        super([top, bottom]);
         this.split = split;
-        this.top = top;
-        this.bottom = bottom;
     }
     override void resize(int left, int top, int width, int height) {
         int splitPos = split;
@@ -589,15 +593,18 @@ class HSplit : Component {
     override void down() {
         top.down();
     }
+    private Component top() {
+        return children[0];
+    }
+    private Component bottom() {
+        return children[1];
+    }
 }
-class VSplit : Component {
+class VSplit : Container {
     int split;
-    Component left;
-    Component right;
     this(int split, Component left, Component right) {
+        super([left, right]);
         this.split = split;
-        this.left = left;
-        this.right = right;
     }
     override void resize(int left, int top, int width, int height) {
         int splitPos = split;
@@ -617,6 +624,12 @@ class VSplit : Component {
     }
     override void down() {
         left.down();
+    }
+    private Component left() {
+        return children[0];
+    }
+    private Component right() {
+        return children[1];
     }
 }
 
@@ -645,6 +658,7 @@ class Text : Component {
         context.putString(0, 0, content.takeIgnoreAnsiEscapes(width));
     }
 }
+
 string takeIgnoreAnsiEscapes(string s, uint length) {
     string result;
     uint count = 0;
@@ -748,86 +762,6 @@ class List(T, alias stringTransform) : Component
     }
 }
 
-    /+class List : NCursesComponent
-{
-    class Details {
-        long selection;
-        this() {
-            this.selection = 0;
-        }
-    }
-    Screen screen;
-    GitCommit[] model;
-
-    this(Screen screen, GitCommit[] model)
-    {
-        this.screen = screen;
-        this.model = model;
-        this.details = new Details();
-    }
-
-    /// return selection
-    string get()
-    {
-        if (details.selection == -1)
-        {
-            return "";
-        }
-        return model[details.selection];
-    }
-
-    void resize()
-    {
-        height = screen.height - 2;
-        details.offset = 0;
-        details.selection = 0;
-    }
-
-    void selectUp()
-    {
-        if (details.selection < allMatches.length - 1)
-        {
-            details.selection++;
-            // correct selection to be in the right range.
-            // we check only the upper limit, as we just incremented the selection
-            while (details.selection >= details.offset + height)
-            {
-                details.offset++;
-            }
-        }
-    }
-
-    void selectDown()
-    {
-        if (details.selection > 0)
-        {
-            details.selection--;
-            // correct selection to be in the right range.
-            // we check only the lower limit, as we just decremented the selection
-            while (details.selection < details.offset)
-            {
-                details.offset--;
-            }
-        }
-    }
-
-    private void adjustOffsetAndSelection()
-    {
-        details.selection = min(details.selection, allMatches.length - 1);
-
-        if (allMatches.length < height)
-        {
-            details.offset = 0;
-        }
-        if (details.selection < details.offset)
-        {
-            details.offset = details.selection;
-        }
-    }
-    /// render the list
-}
-+/
-
 extern(C) void signal(int sig, void function(int) );
 UiInterface theUi;
 extern(C) void windowSizeChangedSignalHandler(int) {
@@ -858,7 +792,7 @@ class Context {
         return this;
     }
 }
-class Ui(State) : UiInterface{
+class Ui(State) : UiInterface {
     Terminal terminal;
     Component root;
     this(Terminal terminal, Component root) {

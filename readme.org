@@ -1,4 +1,4 @@
-#+TODO: TODO IN-PROGRESS | DONE
+#+TODO: TODO IN-PROGRESS | DONE NOT
 * repo-worker
 [[https://github.com/gizmomogwai/repo-worker][https://img.shields.io/github/tag/gizmomogwai/repo-worker.svg?style=flat-square]] [[https://travis-ci.org/gizmomogwai/repo-worker][https://img.shields.io/travis/gizmomogwai/repo-worker/master.svg?style=flat-square]] [[https://codecov.io/gh/gizmomogwai/repo-worker][https://img.shields.io/codecov/c/github/gizmomogwai/repo-worker/master.svg?style=flat-square]] [[https://gizmomogwai.github.io/repo-worker][https://img.shields.io/readthedocs/pip.svg?style=flat-square]]
 
@@ -38,15 +38,24 @@ CLOSED: [2022-06-10 Fri 00:39]
 CLOSED: [2022-06-07 Tue 21:43]
 - CLOSING NOTE [2022-06-07 Tue 21:43] \\
   used code from phobos as its protected there
-*** TODO implement -int splits for vsplit
+*** DONE implement -int splits for vsplit
+CLOSED: [2022-06-11 Sat 00:57]
+- CLOSING NOTE [2022-06-11 Sat 00:57]
 *** TODO implement proper event bubbling or somethign else (e.g. only the details view gets the events, or some signal slot thing)
+*** IN-PROGRESS introduce container
 *** IN-PROGRESS implement oper/history
+**** TODO execute gittool on enter on commit (e.g. magit or gitk)
 **** DONE parse git commits
 CLOSED: [2022-06-08 Wed 09:37]
 - CLOSING NOTE [2022-06-08 Wed 09:37]
-**** TODO clickable links in git commits ... e.g. jira links or gerrit links
 **** DONE make scanning of logs parallel (and measure time here)
 CLOSED: [2022-06-08 Wed 09:38]
 
 - CLOSING NOTE [2022-06-08 Wed 09:38] \\
   amap for the win
+
+**** NOT clickable links in git commits ... e.g. jira links or gerrit links
+CLOSED: [2022-06-11 Sat 00:58]
+- CLOSING NOTE [2022-06-11 Sat 00:58] \\
+  cannot do in terminal
+

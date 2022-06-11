@@ -1,5 +1,5 @@
 /++
- + Copyright: Copyright © 2016, Christian Köstlin
+ + Copyright: Copyright 2016, Christian Koestlin
  + Authors: Christian Koestlin
  + License: MIT
  +/

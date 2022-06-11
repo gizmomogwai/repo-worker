@@ -51,8 +51,7 @@ struct Branch
             .git("log", "--pretty=oneline", "--abbrev-commit", "%s...%s/%s".format(localBranch, remote, remoteBranch))
             .message("GetUploadInfo")
             .run
-            .map!(o => UploadInfo(this, o))
-            ;
+            .map!(o => UploadInfo(this, o));
     }
 }
 
