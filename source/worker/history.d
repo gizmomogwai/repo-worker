@@ -207,47 +207,13 @@ class HistoryUi : Ui!(State) {
     /// handle input events
     override State handleKey(KeyInput input, State state)
     {
-        /*
-          if (input.specialKey)
-          {
-          switch (input.key)
-          {
-          case Key.up:
-          root.up;
-          render;
-          break;
-          case Key.down:
-          root.down;
-          render;
-          break;
-          case Key.resize:
-          resize();
-          render;
-          break;
-          default:
-          break;
-          }
-          }
-          else
-        */
-        {
-            switch (input.input)
-            {
-            case [10]:
-            case [127]:
-                state.finished = true;
-                break;
-            case "j":
-                root.up;
-                render;
-                break;
-            case "k":
-                root.down;
-                render;
-                break;
-            default:
-                break;
-            }
+        switch (input.input) {
+        case "\x1B":
+            state.finished = true;
+            break;
+        default:
+            root.handleInput(input);
+            break;
         }
         return state;
     }
@@ -285,6 +251,9 @@ class Details : Component
             }
         }
     }
+    override bool handlesInput() {
+        return false;
+    }
 }
 
 auto collectData(T)(T work, Log log) {
@@ -309,9 +278,20 @@ auto collectData(T)(T work, Log log) {
 
 void tui(T, Results)(T work, Log log, Results results)
 {
+
     KeyInput keyInput;
     scope terminal = new Terminal();
-
+    /+
+    while (true) {
+        import std.stdio;
+        auto i = terminal.getInput();
+        writeln(i);
+        if (i.input == "a") {
+            break;
+        }
+        
+    }
++/
     auto details = new Details();
     auto list =  new List!(GitCommit,
                            gitCommit => "%s %s %s %s"
@@ -324,6 +304,8 @@ void tui(T, Results)(T work, Log log, Results results)
     if (!results.empty) {
         list.select();
     }
+//    auto list2 = new List!(string,
+//                           s => s)(["abc", "def"]);
     auto listAndDetails = new VSplit(132, // (+ 26 20 50 30 4 2)
                                      list,
                                      details);
@@ -336,13 +318,16 @@ void tui(T, Results)(T work, Log log, Results results)
 
     auto ui = new HistoryUi(terminal,
                             root);
+    list.requestFocus();
     ui.resize();
     while (!state.finished)
     {
         try
         {
             ui.render();
-            state = ui.handleKey(terminal.getInput(), state);
+            auto input = terminal.getInput();
+            import std.file : append; "key.log".append("read input: %s\n".format(input));
+            state = ui.handleKey(input, state);
         }
         catch (NoKeyException e)
         {

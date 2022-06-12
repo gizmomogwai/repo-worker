@@ -41,7 +41,9 @@ CLOSED: [2022-06-07 Tue 21:43]
 *** DONE implement -int splits for vsplit
 CLOSED: [2022-06-11 Sat 00:57]
 - CLOSING NOTE [2022-06-11 Sat 00:57]
-*** TODO implement proper event bubbling or somethign else (e.g. only the details view gets the events, or some signal slot thing)
+*** DONE implement proper event bubbling or somethign else (e.g. only the details view gets the events, or some signal slot thing)
+CLOSED: [2022-06-12 Sun 22:29]
+- CLOSING NOTE [2022-06-12 Sun 22:29]
 *** IN-PROGRESS introduce container
 *** IN-PROGRESS implement oper/history
 **** TODO execute gittool on enter on commit (e.g. magit or gitk)
