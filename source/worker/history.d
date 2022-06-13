@@ -2,7 +2,7 @@ module worker.history;
 
 import terminal;
 import colored;
-import worker.common : Project;
+import worker.common : Project, Command;
 import worker.arguments : Log;
 import core.time : dur;
 import std.datetime : SysTime, unixTimeToStdTime, SimpleTimeZone;
@@ -294,6 +294,17 @@ void tui(T, Results)(T work, Log log, Results results)
     if (!results.empty) {
         list.select();
     }
+    list.setInputHandler((input) {
+            if (input.input == "\n") {
+                auto commit = list.getSelection();
+                import std.file : append; "key.log".append("show details for %s".format(commit));
+                auto command = ["gitk", "--all", "--select-commit=%s".format(commit.sha)];
+                import std.file : append; "key.log".append("executing: %s".format(command));
+                Command(command).workdir(commit.project.path).run;
+                return true;
+            }
+            return false;
+        });
     //auto list2 = new List!(string,
     //   s => s)(["abc", "def"]);
     auto listAndDetails = new VSplit(132, // (+ 26 20 50 30 4 2)

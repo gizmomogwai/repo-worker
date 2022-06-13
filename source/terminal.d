@@ -356,6 +356,8 @@ int byteCount(int k)
     return 4;
 }
 
+alias InputHandler = bool delegate(KeyInput input);
+
 abstract class Component {
     Component parent;
     Component[] children;
@@ -367,6 +369,8 @@ abstract class Component {
     Component[] focusComponents;
     Cycle!(Component[]) focusComponentsRing;
     Component currentFocusedComponent;
+
+    InputHandler inputHandler;
 
     int left;
     int top;
@@ -380,6 +384,9 @@ abstract class Component {
         }
     }
 
+    auto setInputHandler(InputHandler inputHandler) {
+        this.inputHandler = inputHandler;
+    }
     auto addToFocusComponents(Component c) {
         focusComponents ~= c;
         focusComponentsRing = cycle(focusComponents);
@@ -399,16 +406,19 @@ abstract class Component {
     bool handlesInput() {
         return true;
     }
-    void handleInput(KeyInput input) {
+    bool handleInput(KeyInput input) {
         switch (input.input) {
         case "\t":
             focusNext();
-            break;
+            return true;
         default:
-            if (focusPath !is null) {
-                focusPath.handleInput(input);
+            if (focusPath !is null && focusPath.handleInput(input)) {
+                return true;
             }
-            break;
+            if (inputHandler !is null && inputHandler(input)) {
+                return true;
+            }
+            return false;
         }
     }
     // establishes the input handling path from current focused
@@ -618,19 +628,22 @@ class List(T, alias stringTransform) : Component
         }
         selectionChanged.emit(model[scrollInfo.selection]);
     }
+    auto getSelection() {
+        return model[scrollInfo.selection];
+    }
     override bool handlesInput() {
         return true;
     }
-    override void handleInput(KeyInput input) {
+    override bool handleInput(KeyInput input) {
         switch (input.input) {
         case "j":
             up();
-            return;
+            return true;
         case "k":
             down();
-            return;
+            return true;
         default:
-            return;
+            return super.handleInput(input);
         }
     }
 }

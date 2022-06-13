@@ -22,26 +22,31 @@ struct Command
     string[] command_;
     bool dry_ = false;
     string message_;
+    string workdir_;
     this(string[] cmd)
     {
         this.command_ = cmd;
     }
 
-    this(string[] cmd, bool dry, string message)
+    this(string[] cmd, bool dry, string message, string workdir)
     {
         command_ = cmd;
         dry_ = dry;
         message_ = message;
+        workdir_ = workdir;
     }
 
-    Command message(string message)
+    auto message(string message)
     {
-        return Command(this.command_, this.dry_, message);
+        return Command(this.command_, this.dry_, message, workdir_);
     }
 
-    Command dry(bool dry = true)
+    auto dry(bool dry = true)
     {
-        return Command(this.command_, dry, this.message_);
+        return Command(this.command_, dry, this.message_, workdir_);
+    }
+    auto workdir(string wd) {
+        return Command(this.command_, dry_, this.message_, wd);
     }
 
     Optional!string run()
@@ -52,7 +57,8 @@ struct Command
         {
             return no!string;
         }
-        auto res = execute(command_);
+        import std.process : Config;
+        auto res = execute(command_, null, Config.none, size_t.max, workdir_);
         if (res.status == 0)
         {
             return res.output.some;
