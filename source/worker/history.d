@@ -278,17 +278,18 @@ auto collectData(T)(T work, Log log) {
 
 void tui(T, Results)(T work, Log log, Results results)
 {
-
     KeyInput keyInput;
     scope terminal = new Terminal();
     auto details = new Details();
-    auto list =  new List!(GitCommit,
-                           gitCommit => "%s %s %s %s"
-                           .format(gitCommit.committerDate.to!string.leftJustify(26).take(26).to!string.yellow,
-                                   gitCommit.project.shortPath.leftJustify(20).take(20).to!string.red,
-                                   gitCommit.author.leftJustify(50).take(50).to!string.green,
-                                   gitCommit.title.leftJustify(30).take(30).to!string,
-                           ))(results);
+    auto list =  new List!(
+        GitCommit,
+        gitCommit => "%s %s %s %s".format(
+            gitCommit.committerDate.to!string.leftJustify(26).take(26).to!string.yellow,
+            gitCommit.project.shortPath.leftJustify(20).take(20).to!string.red,
+            gitCommit.author.leftJustify(50).take(50).to!string.green,
+            gitCommit.title.leftJustify(30).take(30).to!string,
+        )
+    )(results);
     list.selectionChanged.connect(&details.newSelection);
     if (!results.empty) {
         list.select();

@@ -10,6 +10,7 @@ import std.algorithm : countUntil;
 import std.stdio;
 import std;
 import std.conv : to;
+import std.range : Cycle, cycle;
 alias Position = Tuple!(int, "x", int, "y");
 alias Dimension = Tuple!(int, "width", int, "height"); /// https://en.wikipedia.org/wiki/ANSI_escape_code
 
@@ -364,6 +365,7 @@ abstract class Component {
     // addToFocusComponents.
     Component focusPath;
     Component[] focusComponents;
+    Cycle!(Component[]) focusComponentsRing;
     Component currentFocusedComponent;
 
     int left;
@@ -380,6 +382,7 @@ abstract class Component {
 
     auto addToFocusComponents(Component c) {
         focusComponents ~= c;
+        focusComponentsRing = cycle(focusComponents);
     }
 
     void resize(int left, int top, int width, int height) {
@@ -425,8 +428,9 @@ abstract class Component {
     }
     void focusNext() {
         if (parent is null) {
-            auto index = focusComponents.countUntil(currentFocusedComponent);
-            focusComponents[(index + 1) % $].requestFocus();
+            auto current = focusComponentsRing.find(currentFocusedComponent);
+            current.popFront();
+            current.front.requestFocus();
         } else {
             parent.focusNext();
         }
