@@ -53,7 +53,9 @@ CLOSED: [2022-06-14 Tue 00:30]
 - CLOSING NOTE [2022-06-14 Tue 00:30] \\
   problem when i want to launch tig ... probably because its nested tuis?
 **** TODO launch tui app as commit viewer (e.g. tig)
-**** TODO remove > when list is not focused
+**** DONE remove > when list is not focused
+CLOSED: [2022-06-14 Tue 00:38]
+- CLOSING NOTE [2022-06-14 Tue 00:38]
 **** DONE parse git commits
 CLOSED: [2022-06-08 Wed 09:37]
 - CLOSING NOTE [2022-06-08 Wed 09:37]

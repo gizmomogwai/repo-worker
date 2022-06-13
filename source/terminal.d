@@ -424,6 +424,7 @@ abstract class Component {
     // establishes the input handling path from current focused
     // child to the root component
     void requestFocus() {
+        currentFocusedComponent = this;
         if (this.parent !is null) {
             this.parent.buildFocusPath(this, this);
         }
@@ -431,6 +432,9 @@ abstract class Component {
     void buildFocusPath(Component focusedComponent, Component path) {
         enforce(children.countUntil(path) >= 0, "Cannot find child");
         this.focusPath = path;
+        if (this.currentFocusedComponent !is null) {
+            this.currentFocusedComponent.currentFocusedComponent = focusedComponent;
+        }
         this.currentFocusedComponent = focusedComponent;
         if (this.parent !is null) {
             this.parent.buildFocusPath(focusedComponent, this);
@@ -601,7 +605,9 @@ class List(T, alias stringTransform) : Component
         {
             auto index = i+scrollInfo.offset;
             if (index >= model.length) return;
-            auto text = (index == scrollInfo.selection ? "> %s" : "  %s")
+            auto text =
+                (((index == scrollInfo.selection) &&
+                 (currentFocusedComponent == this)) ? "> %s" : "  %s")
                 .format(stringTransform(model[index]));
             context.putString(0, i, text);
         }
