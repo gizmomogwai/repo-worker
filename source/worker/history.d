@@ -281,17 +281,6 @@ void tui(T, Results)(T work, Log log, Results results)
 
     KeyInput keyInput;
     scope terminal = new Terminal();
-    /+
-    while (true) {
-        import std.stdio;
-        auto i = terminal.getInput();
-        writeln(i);
-        if (i.input == "a") {
-            break;
-        }
-        
-    }
-+/
     auto details = new Details();
     auto list =  new List!(GitCommit,
                            gitCommit => "%s %s %s %s"
@@ -304,8 +293,8 @@ void tui(T, Results)(T work, Log log, Results results)
     if (!results.empty) {
         list.select();
     }
-//    auto list2 = new List!(string,
-//                           s => s)(["abc", "def"]);
+    //auto list2 = new List!(string,
+    //   s => s)(["abc", "def"]);
     auto listAndDetails = new VSplit(132, // (+ 26 20 50 30 4 2)
                                      list,
                                      details);
@@ -318,7 +307,11 @@ void tui(T, Results)(T work, Log log, Results results)
 
     auto ui = new HistoryUi(terminal,
                             root);
+
+    // setup focus handling
+    root.addToFocusComponents(list);
     list.requestFocus();
+
     ui.resize();
     while (!state.finished)
     {

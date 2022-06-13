@@ -358,7 +358,13 @@ int byteCount(int k)
 abstract class Component {
     Component parent;
     Component[] children;
-    Component focusedChild;
+
+    // the root of a component hierarchy carries all focusComponents,
+    // atm those have to be registered manually via
+    // addToFocusComponents.
+    Component focusPath;
+    Component[] focusComponents;
+    Component currentFocusedComponent;
 
     int left;
     int top;
@@ -371,12 +377,18 @@ abstract class Component {
             child.setParent(this);
         }
     }
+
+    auto addToFocusComponents(Component c) {
+        focusComponents ~= c;
+    }
+
     void resize(int left, int top, int width, int height) {
         this.left = left;
         this.top = top;
         this.width = width;
         this.height = height;
     }
+
     auto setParent(Component parent) {
         this.parent = parent;
     }
@@ -387,69 +399,37 @@ abstract class Component {
     void handleInput(KeyInput input) {
         switch (input.input) {
         case "\t":
-//            import std.file : append; "key.log".append("focus next\n");
             focusNext();
             break;
         default:
-            if (focusedChild !is null) {
-                focusedChild.handleInput(input);
+            if (focusPath !is null) {
+                focusPath.handleInput(input);
             }
             break;
         }
     }
+    // establishes the input handling path from current focused
+    // child to the root component
     void requestFocus() {
         if (this.parent !is null) {
-            this.parent.focus(this);
+            this.parent.buildFocusPath(this, this);
         }
     }
-    void focus(Component child) {
-        enforce(children.countUntil(child) >= 0, "Cannot find child");
-        this.focusedChild = child;
-        requestFocus();
-    }
-    Component findFocusedChild() {
-        if (focusedChild is null) {
-            return this;
+    void buildFocusPath(Component focusedComponent, Component path) {
+        enforce(children.countUntil(path) >= 0, "Cannot find child");
+        this.focusPath = path;
+        this.currentFocusedComponent = focusedComponent;
+        if (this.parent !is null) {
+            this.parent.buildFocusPath(focusedComponent, this);
         }
-
-        return focusedChild.findFocusedChild();
     }
     void focusNext() {
-        Component focused = findFocusedChild;
-        if (focused is null) {
-            return;
+        if (parent is null) {
+            auto index = focusComponents.countUntil(currentFocusedComponent);
+            focusComponents[(index + 1) % $].requestFocus();
+        } else {
+            parent.focusNext();
         }
-        Component parentOfFocused = focused.parent;
-        if (parentOfFocused is null) {
-            return;
-        }
-
-        if (parentOfFocused.children.length == 0) {
-            return;
-        }
-
-        parentOfFocused.internalFocusNext;
-    }
-    private void internalFocusNext() {
-        auto currentFocus = children.countUntil(focusedChild);
-//        import std.file : append; "key.log".append("current focus %s".format(currentFocus));
-        auto nextFocus = (currentFocus+1) % children.length;
-        while (true) {
-            if (nextFocus == currentFocus) {
-//                import std.file : append; "key.log".append("focus next done 1\n");
-                return; // done, as we have iterated all children
-            }
-            if (children[nextFocus].handlesInput) {
-                focusedChild = children[nextFocus];
-                focusedChild.requestFocus();
-                // import std.file : append; "key.log".append("focus next done 2\n");
-                return;
-            }
-            // import std.file : append; "key.log".append("next %s %s %s %s\n".format(this, children.length, currentFocus, nextFocus));
-
-            nextFocus = (nextFocus+1) % children.length;
-        }
-
     }
 }
 
