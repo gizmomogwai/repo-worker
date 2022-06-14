@@ -295,12 +295,18 @@ void tui(T, Results)(T work, Log log, Results results)
         list.select();
     }
     list.setInputHandler((input) {
-            if (input.input == "\n") {
+            if (input.input == "1") {
                 auto commit = list.getSelection();
                 import std.file : append; "key.log".append("show details for %s".format(commit));
                 auto command = ["gitk", "--all", "--select-commit=%s".format(commit.sha)];
                 import std.file : append; "key.log".append("executing: %s".format(command));
-                Command(command).workdir(commit.project.path).run;
+                Command(command).workdir(commit.project.path).spawn.wait;
+                return true;
+            }
+            if (input.input == "2") {
+                auto commit = list.getSelection();
+                auto command = ["tig", commit.sha];
+                Command(command).workdir(commit.project.path).spawn.wait;
                 return true;
             }
             return false;
