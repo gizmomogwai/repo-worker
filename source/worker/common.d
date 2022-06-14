@@ -3,7 +3,7 @@ module worker.common;
 import optional : Optional, no, some;
 import std.experimental.logger : trace, error;
 import std.string : format, join, replace, indexOf, strip;
-import std.process : execute;
+import std.process : execute, Config, spawnProcess, Pid;
 import std.path : asAbsolutePath, asNormalizedPath;
 import std.array : array;
 import std.range : chain;
@@ -57,7 +57,6 @@ struct Command
         {
             return no!string;
         }
-        import std.process : Config;
         auto res = execute(command_, null, Config.none, size_t.max, workdir_);
         if (res.status == 0)
         {
@@ -69,6 +68,12 @@ struct Command
             res.output.error;
             return no!string;
         }
+    }
+
+    Pid spawn()
+    {
+        "%s: spawning process %s (%s)".format(message_, command_, command_.join(" ")).trace;
+        return spawnProcess(command_);
     }
 }
 

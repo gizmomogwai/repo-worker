@@ -14,6 +14,11 @@ import std.range : Cycle, cycle;
 alias Position = Tuple!(int, "x", int, "y");
 alias Dimension = Tuple!(int, "width", int, "height"); /// https://en.wikipedia.org/wiki/ANSI_escape_code
 
+auto next(Range)(Range r) {
+    r.popFront;
+    return r.front;
+}
+
 enum Operation : string
 {
 
@@ -442,9 +447,10 @@ abstract class Component {
     }
     void focusNext() {
         if (parent is null) {
-            auto current = focusComponentsRing.find(currentFocusedComponent);
-            current.popFront();
-            current.front.requestFocus();
+            focusComponentsRing
+                .find(currentFocusedComponent)
+                .next()
+                .requestFocus();
         } else {
             parent.focusNext();
         }
