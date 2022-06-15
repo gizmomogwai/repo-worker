@@ -18,6 +18,11 @@ works your dirty [[https://code.google.com/p/git-repo/][repo]] git repositories 
 - signal handler for windowsize changes
 
 ** Todos
+*** DONE implement arrow keys
+CLOSED: [2022-06-15 Wed 23:03]
+- CLOSING NOTE [2022-06-15 Wed 23:03]
+*** TODO implement automatic focus strategy
+tiefensuche nach focusierbaren compnenten und cycle.next
 *** DONE for history make redraw not always relayout
 CLOSED: [2022-06-05 Sun 12:08]
 - CLOSING NOTE [2022-06-05 Sun 12:08]
@@ -52,7 +57,9 @@ CLOSED: [2022-06-13 Mon 23:43]
 CLOSED: [2022-06-14 Tue 00:30]
 - CLOSING NOTE [2022-06-14 Tue 00:30] \\
   problem when i want to launch tig ... probably because its nested tuis?
-**** TODO launch tui app as commit viewer (e.g. tig)
+**** DONE launch tui app as commit viewer (e.g. tig)
+CLOSED: [2022-06-14 Tue 23:06]
+- CLOSING NOTE [2022-06-14 Tue 23:06]
 **** DONE remove > when list is not focused
 CLOSED: [2022-06-14 Tue 00:38]
 - CLOSING NOTE [2022-06-14 Tue 00:38]

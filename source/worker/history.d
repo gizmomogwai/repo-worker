@@ -297,9 +297,7 @@ void tui(T, Results)(T work, Log log, Results results)
     list.setInputHandler((input) {
             if (input.input == "1") {
                 auto commit = list.getSelection();
-                import std.file : append; "key.log".append("show details for %s".format(commit));
                 auto command = ["gitk", "--all", "--select-commit=%s".format(commit.sha)];
-                import std.file : append; "key.log".append("executing: %s".format(command));
                 Command(command).workdir(commit.project.path).spawn.wait;
                 return true;
             }

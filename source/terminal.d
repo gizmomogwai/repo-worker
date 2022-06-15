@@ -109,15 +109,16 @@ class Terminal {
         return Dimension(ws.ws_col, ws.ws_row);
     }
     KeyInput getInput() {
-        int c;
-        (core.sys.posix.unistd.read(1, &c, 1) == 1).errnoEnforce("Cannot read next input");
-        return KeyInput.fromText("" ~ cast(char)c);
+        char[10] buffer;
+        auto count = core.sys.posix.unistd.read(1, &buffer, buffer.length);
+        (count != -1).errnoEnforce("Cannot read next input");
+        return KeyInput.fromText(buffer[0..count].idup);
     }
 }
-enum Key : int
+enum Key : string
 {
-    down = 1,
-    up = 2,
+    up = [27, 91, 65],
+    down = [27, 91, 66],
     /+
      codeYes = KEY_CODE_YES,
      min = KEY_MIN,
@@ -145,14 +146,14 @@ enum Key : int
      f16 = KEY_F(16),
      f17 = KEY_F(17),
      f18 = KEY_F(18),
-     f19 = KEY_F(19),
+     f19s = KEY_F(19),
      f20 = KEY_F(20),
      f21 = KEY_F(21),
      f22 = KEY_F(22),
      f23 = KEY_F(23),
      f24 = KEY_F(24),
      f25 = KEY_F(25),
-     f26 = KEY_F(26),
+     f26 = KEY_F(26),|
      f27 = KEY_F(27),
      f28 = KEY_F(28),
      f29 = KEY_F(29),
@@ -320,18 +321,24 @@ struct KeyInput
 {
     static int COUNT = 0;
     int count;
-    bool specialKey;
     string input;
-    this(int count, bool specialKey, string input)
+    byte[] bytes;
+    this(int count, string input)
     {
         this.count = count;
-        this.specialKey = specialKey;
         this.input = input.dup;
+    }
+    this(int count, byte[] bytes) {
+        this.count = count;
+        this.bytes = bytes;
     }
 
     static KeyInput fromText(string s)
     {
-        return KeyInput(COUNT++, false, s);
+        return KeyInput(COUNT++, s);
+    }
+    static KeyInput fromBytes(byte[] bytes) {
+        return KeyInput(COUNT++, bytes);
     }
 }
 
@@ -649,9 +656,11 @@ class List(T, alias stringTransform) : Component
     override bool handleInput(KeyInput input) {
         switch (input.input) {
         case "j":
+        case Key.up:
             up();
             return true;
         case "k":
+        case Key.down:
             down();
             return true;
         default:
