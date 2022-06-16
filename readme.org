@@ -50,7 +50,9 @@ CLOSED: [2022-06-11 Sat 00:57]
 CLOSED: [2022-06-12 Sun 22:29]
 - CLOSING NOTE [2022-06-12 Sun 22:29]
 *** DONE introduce container
-CLOSED: [2022-06-13 Mon 23:43]
+*** DONE implement buffering of terminal output to reduce flickering
+CLOSED: [2022-06-16 Thu 23:22]
+- CLOSING NOTE [2022-06-16 Thu 23:22]
 - CLOSING NOTE [2022-06-13 Mon 23:43]
 *** IN-PROGRESS implement oper/history
 **** DONE execute gitk on enter

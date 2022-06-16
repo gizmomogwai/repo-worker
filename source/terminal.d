@@ -5,12 +5,9 @@ import core.sys.posix.unistd;
 import core.sys.posix.sys.ioctl;
 import core.stdc.stdio;
 import core.stdc.ctype;
-import std.signals : Signal;
-import std.algorithm : countUntil;
-import std.stdio;
-import std;
+import std; // import std.signals is somehow incomplete
 import std.conv : to;
-import std.range : Cycle, cycle;
+
 alias Position = Tuple!(int, "x", int, "y");
 alias Dimension = Tuple!(int, "width", int, "height"); /// https://en.wikipedia.org/wiki/ANSI_escape_code
 
@@ -61,6 +58,7 @@ string to(State state, Mode mode) {
 Terminal INSTANCE;
 class Terminal {
     termios originalState;
+    auto buffer = appender!(char[])();
     this() {
         (tcgetattr(1, &originalState) == 0).errnoEnforce("Cannot get termios");
         termios newState = originalState;
@@ -84,12 +82,17 @@ class Terminal {
     }
 
     final void w(string data, lazy string errorMessage) {
-        (core.sys.posix.unistd.write(2, data.ptr, data.length) == data.length).errnoEnforce(
-          errorMessage);
+        buffer.put(cast(char[])data);
     }
 
     auto clear() {
+        buffer.clear();
         w(Operation.CLEAR_TERMINAL.execute, "Cannot clear terminal");
+        return this;
+    }
+    auto flip() {
+        auto data = buffer.data;
+        (core.sys.posix.unistd.write(2, data.ptr, data.length) == data.length).errnoEnforce("Cannot blit data");
         return this;
     }
     ~this() {
@@ -716,6 +719,7 @@ class Ui(State) : UiInterface {
             scope context =
                 new Context(terminal, root.left, root.top, root.width, root.height);
             root.render(context);
+            terminal.flip;
         }
         catch (Exception e)
         {
