@@ -217,14 +217,6 @@ class HistoryUi : Ui!(State) {
         }
         return state;
     }
-
-    void resize() {
-        with (terminal.dimension) {
-            foreach (root; roots) {
-                root.resize(0, 0, width, height);
-            }
-        }
-    }
 }
 
 class Details : Component
@@ -278,33 +270,6 @@ auto collectData(T)(T work, Log log) {
         .array;
 }
 
-class Button : Component {
-    string text;
-    void delegate() pressed;
-    this(string text, void delegate() pressed) {
-        this.text = text;
-        this.pressed = pressed;
-    }
-    override void render(Context c) {
-        if (currentFocusedComponent == this) {
-            c.putString(0, 0, "> " ~ text);
-        } else {
-            c.putString(0, 0, "  " ~ text);
-        }
-    }
-    override bool handleInput(KeyInput input) {
-        switch (input.input) {
-        case " ":
-            pressed();
-            return true;
-        default:
-            return false;
-        }
-    }
-    override string toString() {
-        return "Button";
-    }
-}
 void historyTui(T, Results)(T work, Log log, Results results)
 {
     KeyInput keyInput;
@@ -339,25 +304,17 @@ void historyTui(T, Results)(T work, Log log, Results results)
                 Command(command).workdir(commit.project.path).spawn.wait;
                 return true;
             }
-            return false;
-        });
-    auto list2 = new List!(string, s => s)(["abc", "def"]);
-    list2.setInputHandler((input) {
-            if (input.input == "1") {
-                auto _pop = { ui.pop();};
-                auto b1 = new Button("finish1", _pop);
-                auto b2 = new Button("finish2", _pop);
-                auto popup = new VSplit(50, b1, b2);
-                popup.addToFocusComponents(b1);
-                popup.addToFocusComponents(b2);
-                ui.push(popup);
+            if (input.input == "3") {
+                auto commit = list.getSelection();
+                auto command = ["magit", commit.project.path, commit.sha];
+                Command(command).spawn.wait;
                 return true;
             }
             return false;
         });
     auto listAndDetails = new VSplit(132, // (+ 26 20 50 30 4 2)
                                      list,
-                                     list2);
+                                     details);
     string statusString = "Found %s commits in %s repositories matching criteria since='%s'".format(results.length, work.projects.length, log.gitDurationSpec);
     if (!log.author.empty) {
         statusString ~= " and author='%s'".format(log.author);
@@ -367,7 +324,6 @@ void historyTui(T, Results)(T work, Log log, Results results)
 
     // setup focus handling
     root.addToFocusComponents(list);
-    root.addToFocusComponents(list2);
     list.requestFocus();
 
     ui.push(root);
