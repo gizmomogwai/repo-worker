@@ -11,6 +11,7 @@ dependency "asciitable" version="~>0.0.12"
 dependency "dime" version="~>0.0.6"
 dependency "argparse" version="*"
 dependency "profiled" version="*"
+dependency "tui" version="*"
 
 preGenerateCommands "packageversion || dub run packageversion"
 sourceFiles "out/generated/packageversion/worker/packageversion.d"

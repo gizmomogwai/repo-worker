@@ -16,6 +16,7 @@
 		"profiled": "~master",
 		"silly": "1.1.1",
 		"stdx-allocator": "2.77.5",
+		"tui": "~master",
 		"unit-threaded": "2.0.4",
 		"vibe-d": "0.9.4"
 	}

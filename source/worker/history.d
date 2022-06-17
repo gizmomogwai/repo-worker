@@ -1,6 +1,6 @@
 module worker.history;
 
-import terminal;
+import tui;
 import colored;
 import worker.common : Project, Command;
 import worker.arguments : Log;
@@ -305,7 +305,7 @@ class Button : Component {
         return "Button";
     }
 }
-void tui(T, Results)(T work, Log log, Results results)
+void historyTui(T, Results)(T work, Log log, Results results)
 {
     KeyInput keyInput;
     scope terminal = new Terminal();
@@ -390,5 +390,5 @@ void tui(T, Results)(T work, Log log, Results results)
 void history(T)(T work, Log log)
 {
     auto results = collectData(work, log);
-    tui(work, log, results);
+    historyTui(work, log, results);
 }
