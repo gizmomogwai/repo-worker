@@ -65,11 +65,9 @@ class Terminal {
         newState.c_lflag &= ~(ECHO | ICANON);
         (tcsetattr(1, TCSAFLUSH, &newState) == 0).errnoEnforce("Cannot set termios");
 
-        auto data =
-            State.ALTERNATE_BUFFER.to(Mode.HIGH) ~
-            Operation.CLEAR_TERMINAL.execute ~
-            State.CURSOR.to(Mode.LOW);
-        w(data, "Cannot initialize terminal");
+        w(State.ALTERNATE_BUFFER.to(Mode.HIGH), "Cannot switch to alternate buffer");
+        w(Operation.CLEAR_TERMINAL.execute, "Cannot clear terminal");
+        w(State.CURSOR.to(Mode.LOW), "Cannot hide cursor");
     }
     auto putString(string s) {
         w(s, "Cannot write string");
@@ -96,14 +94,11 @@ class Terminal {
         return this;
     }
     ~this() {
-        auto data =
-            State.ALTERNATE_BUFFER.to(Mode.HIGH) ~
-            Operation.CLEAR_TERMINAL.execute ~
-            State.CURSOR.to(Mode.HIGH) ~
-            State.ALTERNATE_BUFFER.to(Mode.LOW);
-        (core.sys.posix.unistd.write(2, data.ptr, data.length) == data.length).errnoEnforce(
-          "Cannot deinitialize terminal");
-
+        w(State.ALTERNATE_BUFFER.to(Mode.HIGH), "Cannot switch to alternate buffer");
+        w(Operation.CLEAR_TERMINAL.execute, "Cannot clear terminal");
+        w(State.CURSOR.to(Mode.HIGH), "Cannot show cursor");
+        w(State.ALTERNATE_BUFFER.to(Mode.LOW), "Cannot switch to normal buffer");
+        flip();
         (tcsetattr(1, TCSANOW, &originalState) == 0).errnoEnforce("Cannot set termios");
     }
     Dimension dimension() {
