@@ -50,6 +50,12 @@ CLOSED: [2022-06-11 Sat 00:57]
 CLOSED: [2022-06-12 Sun 22:29]
 - CLOSING NOTE [2022-06-12 Sun 22:29]
 *** DONE introduce container
+*** DONE implement popups
+CLOSED: [2022-06-17 Fri 23:25]
+- CLOSING NOTE [2022-06-17 Fri 23:25]
+several roots ... focus goes only to the topmost
+*** TODO implement scrollview
+*** TODO implement ansi skipping drop and take
 *** DONE implement buffering of terminal output to reduce flickering
 CLOSED: [2022-06-16 Thu 23:22]
 - CLOSING NOTE [2022-06-16 Thu 23:22]

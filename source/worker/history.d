@@ -201,8 +201,8 @@ State state =
 };
 
 class HistoryUi : Ui!(State) {
-    this(Terminal terminal, Component root) {
-        super(terminal, root);
+    this(Terminal terminal) {
+        super(terminal);
     }
     /// handle input events
     override State handleKey(KeyInput input, State state)
@@ -212,7 +212,7 @@ class HistoryUi : Ui!(State) {
             state.finished = true;
             break;
         default:
-            root.handleInput(input);
+            roots[$-1].handleInput(input);
             break;
         }
         return state;
@@ -220,7 +220,9 @@ class HistoryUi : Ui!(State) {
 
     void resize() {
         with (terminal.dimension) {
-            root.resize(0, 0, width, height);
+            foreach (root; roots) {
+                root.resize(0, 0, width, height);
+            }
         }
     }
 }
@@ -276,10 +278,40 @@ auto collectData(T)(T work, Log log) {
         .array;
 }
 
+class Button : Component {
+    string text;
+    void delegate() pressed;
+    this(string text, void delegate() pressed) {
+        this.text = text;
+        this.pressed = pressed;
+    }
+    override void render(Context c) {
+        if (currentFocusedComponent == this) {
+            c.putString(0, 0, "> " ~ text);
+        } else {
+            c.putString(0, 0, "  " ~ text);
+        }
+    }
+    override bool handleInput(KeyInput input) {
+        switch (input.input) {
+        case " ":
+            pressed();
+            return true;
+        default:
+            return false;
+        }
+    }
+    override string toString() {
+        return "Button";
+    }
+}
 void tui(T, Results)(T work, Log log, Results results)
 {
     KeyInput keyInput;
     scope terminal = new Terminal();
+
+    auto ui = new HistoryUi(terminal);
+
     auto details = new Details();
     auto list =  new List!(
         GitCommit,
@@ -309,11 +341,23 @@ void tui(T, Results)(T work, Log log, Results results)
             }
             return false;
         });
-    //auto list2 = new List!(string,
-    //   s => s)(["abc", "def"]);
+    auto list2 = new List!(string, s => s)(["abc", "def"]);
+    list2.setInputHandler((input) {
+            if (input.input == "1") {
+                auto _pop = { ui.pop();};
+                auto b1 = new Button("finish1", _pop);
+                auto b2 = new Button("finish2", _pop);
+                auto popup = new VSplit(50, b1, b2);
+                popup.addToFocusComponents(b1);
+                popup.addToFocusComponents(b2);
+                ui.push(popup);
+                return true;
+            }
+            return false;
+        });
     auto listAndDetails = new VSplit(132, // (+ 26 20 50 30 4 2)
                                      list,
-                                     details);
+                                     list2);
     string statusString = "Found %s commits in %s repositories matching criteria since='%s'".format(results.length, work.projects.length, log.gitDurationSpec);
     if (!log.author.empty) {
         statusString ~= " and author='%s'".format(log.author);
@@ -321,13 +365,12 @@ void tui(T, Results)(T work, Log log, Results results)
     auto globalStatus = new Text(statusString);
     auto root = new HSplit(-1, listAndDetails, globalStatus);
 
-    auto ui = new HistoryUi(terminal,
-                            root);
-
     // setup focus handling
     root.addToFocusComponents(list);
+    root.addToFocusComponents(list2);
     list.requestFocus();
 
+    ui.push(root);
     ui.resize();
     while (!state.finished)
     {

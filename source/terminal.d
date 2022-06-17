@@ -401,8 +401,9 @@ abstract class Component {
         focusComponents ~= c;
         focusComponentsRing = cycle(focusComponents);
     }
-
     void resize(int left, int top, int width, int height) {
+        import std.file : append; "key.log".append("%s.resize(%s, %s, %s, %s)\n".format(this, left, top, width, height));
+
         this.left = left;
         this.top = top;
         this.width = width;
@@ -700,20 +701,33 @@ class Context {
 }
 class Ui(State) : UiInterface {
     Terminal terminal;
-    Component root;
-    this(Terminal terminal, Component root) {
+    Component[] roots;
+    this(Terminal terminal) {
         this.terminal = terminal;
-        this.root = root;
         theUi = this;
         signal(28, &windowSizeChangedSignalHandler);
+    }
+    auto push(Component root) {
+        import std.file : append; "key.log".append("push(%s)\n".format(root));
+        roots ~= root;
+        auto dimension = terminal.dimension;
+        root.resize(0, 0, dimension.width, dimension.height);
+        root.focusComponents[0].requestFocus;
+        return this;
+    }
+    auto pop() {
+        roots = roots[0..$-1];
+        return this;
     }
     void render() {
         try
         {
             terminal.clear;
-            scope context =
-                new Context(terminal, root.left, root.top, root.width, root.height);
-            root.render(context);
+            foreach (root; roots) {
+                scope context =
+                    new Context(terminal, root.left, root.top, root.width, root.height);
+                root.render(context);
+            }
             terminal.flip;
         }
         catch (Exception e)
@@ -724,7 +738,9 @@ class Ui(State) : UiInterface {
     }
     override void resized() {
         auto dimension = terminal.dimension;
-        root.resize(0, 0, dimension.width, dimension.height);
+        foreach (root; roots) {
+            root.resize(0, 0, dimension.width, dimension.height);
+        }
         render;
     }
     abstract State handleKey(KeyInput input, State state);
