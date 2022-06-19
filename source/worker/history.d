@@ -298,20 +298,25 @@ void historyTui(T, Results)(T work, Log log, Results results)
 
     auto details = new Details();
     auto scrolledDetails = new ScrollPane(details);
-    auto list = new List!(GitCommit, gitCommit => "%s %s %s %s".format(
-            gitCommit.committerDate.to!string.leftJustify(26).take(26)
-            .to!string.yellow, gitCommit.project.shortPath.leftJustify(20)
-            .take(20).to!string.red, gitCommit.author.leftJustify(50).take(50)
-            .to!string.green, gitCommit.title.leftJustify(30).take(30).to!string,))(results);
+    // dfmt off
+    auto list = new List!(
+        GitCommit,
+        gitCommit => "%s %s %s %s".format(
+            gitCommit.committerDate.to!string.leftJustify(26).take(26).to!string.yellow,
+            gitCommit.project.shortPath.leftJustify(20).take(20).to!string.red,
+            gitCommit.author.leftJustify(50).take(50).to!string.green,
+            gitCommit.title.leftJustify(30).take(30).to!string,
+      ))(results);
+    // dfmt on
     list.selectionChanged.connect(&details.newSelection);
     if (!results.empty)
     {
         list.select();
     }
     list.setInputHandler((input) {
+        auto commit = list.getSelection();
         if (input.input == "1")
         {
-            auto commit = list.getSelection();
             auto command = [
                 "gitk", "--all", "--select-commit=%s".format(commit.sha)
             ];
@@ -320,14 +325,12 @@ void historyTui(T, Results)(T work, Log log, Results results)
         }
         if (input.input == "2")
         {
-            auto commit = list.getSelection();
             auto command = ["tig", commit.sha];
             Command(command).workdir(commit.project.path).spawn.wait;
             return true;
         }
         if (input.input == "3")
         {
-            auto commit = list.getSelection();
             auto command = ["magit", commit.project.path, commit.sha];
             Command(command).spawn.wait;
             return true;
@@ -344,11 +347,6 @@ void historyTui(T, Results)(T work, Log log, Results results)
     }
     auto globalStatus = new Text(statusString);
     auto root = new HSplit(-1, listAndDetails, globalStatus);
-
-    // setup focus handling
-    root.addToFocusComponents(list);
-    root.addToFocusComponents(scrolledDetails);
-    list.requestFocus();
 
     ui.push(root);
     ui.resize();
