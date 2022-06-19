@@ -25,8 +25,8 @@ string calcPackageVersionTable() {
 }
 +/
 
-mixin CLI!(worker.Arguments).main!((arguments)
-{
+mixin CLI!(worker.Arguments).main!((arguments) {
     import worker : worker_;
+
     return worker_(arguments);
 });

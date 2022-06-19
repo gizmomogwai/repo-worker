@@ -13,7 +13,8 @@ import std.array : appender, empty, front, popFront;
 
 alias Work = Tuple!(string, "base", Project[], "projects");
 
-enum TraversalMode {
+enum TraversalMode
+{
     REPO,
     WALK,
 }

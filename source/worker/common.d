@@ -45,7 +45,9 @@ struct Command
     {
         return Command(this.command_, dry, this.message_, workdir_);
     }
-    auto workdir(string wd) {
+
+    auto workdir(string wd)
+    {
         return Command(this.command_, dry_, this.message_, wd);
     }
 
@@ -76,7 +78,6 @@ struct Command
         return spawnProcess(command_);
     }
 }
-
 
 struct Project
 {

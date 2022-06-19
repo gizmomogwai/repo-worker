@@ -47,11 +47,9 @@ struct Branch
 
     auto getUploadInfo()
     {
-        return project
-            .git("log", "--pretty=oneline", "--abbrev-commit", "%s...%s/%s".format(localBranch, remote, remoteBranch))
-            .message("GetUploadInfo")
-            .run
-            .map!(o => UploadInfo(this, o));
+        return project.git("log", "--pretty=oneline", "--abbrev-commit",
+                "%s...%s/%s".format(localBranch, remote, remoteBranch)).message(
+                "GetUploadInfo").run.map!(o => UploadInfo(this, o));
     }
 }
 
@@ -76,9 +74,11 @@ auto parseTrackingBranches(Project project, string s)
                 remote = remoteCaptures[2];
             }
         }
-        if (branch == null || remote == null) {
+        if (branch == null || remote == null)
+        {
             auto remoteCaptures = line.matchFirst(pushRemoteRegex);
-            if (!remoteCaptures.empty) {
+            if (!remoteCaptures.empty)
+            {
                 branch = remoteCaptures[1];
                 remote = remoteCaptures[2];
             }
@@ -242,15 +242,9 @@ void doUploads(T)(T uploads, bool dry, string topic, string hashtag, ChangeSetTy
             args ~= "t=%s".format(hashtag);
         }
 
-        auto result = upload
-            .branch
-            .project
-            .git(args)
-            .dry(dry)
-            .message("PushingUpstream")
-            .run;
+        auto result = upload.branch.project.git(args).dry(dry).message("PushingUpstream").run;
         info(result);
-/+
+        /+
         if (!result.empty)
         {
             info(result.front);

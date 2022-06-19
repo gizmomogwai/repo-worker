@@ -61,12 +61,14 @@ static immutable(SimpleTimeZone) simpleTimeZonefromISOString(S)(S isoString) @sa
     return new immutable SimpleTimeZone(sign * (dur!"hours"(hours) + dur!"minutes"(minutes)));
 }
 
-auto parseGitDateTime(string[] epochAndZone) {
+auto parseGitDateTime(string[] epochAndZone)
+{
     auto tz = epochAndZone[1].simpleTimeZonefromISOString;
     return SysTime(unixTimeToStdTime(epochAndZone[0].to!long), tz);
 }
 
-class GitCommit {
+class GitCommit
+{
     Project project;
     string sha;
     string author;
@@ -75,18 +77,15 @@ class GitCommit {
     SysTime committerDate;
     string title;
     string message;
-    this(Project project, string sha) {
+    this(Project project, string sha)
+    {
         this.project = project;
         this.sha = sha;
     }
-    this(Project project,
-         string sha,
-         string author,
-         SysTime authorDate,
-         string comitter,
-         SysTime committerDate,
-         string title,
-         string message) {
+
+    this(Project project, string sha, string author, SysTime authorDate,
+            string comitter, SysTime committerDate, string title, string message)
+    {
         this.project = project;
         this.sha = sha;
         this.author = author;
@@ -97,68 +96,91 @@ class GitCommit {
         this.message = message;
     }
 
-    static auto parseCommits(Project project, string rawCommits) {
+    static auto parseCommits(Project project, string rawCommits)
+    {
         GitCommit[] result = [];
         auto lines = rawCommits.split("\n");
         GitCommit current = null;
-        while (!lines.empty) {
+        while (!lines.empty)
+        {
             auto line = lines.front;
-            if (line.startsWith("commit ")) {
-                if (current !is null) {
+            if (line.startsWith("commit "))
+            {
+                if (current !is null)
+                {
                     result ~= current;
                 }
                 current = new GitCommit(project, line.split[1]);
             }
-            if (line.startsWith("parent ")) {
+            if (line.startsWith("parent "))
+            {
                 // ignore
             }
-            if (line.startsWith("tree ")) {
+            if (line.startsWith("tree "))
+            {
                 // ignore
             }
-            if (line.startsWith("author ")) {
+            if (line.startsWith("author "))
+            {
                 auto components = line.split(" ").array;
-                current.author = components[1..$-2].join(" ");
-                current.authorDate = components[$-2..$].parseGitDateTime;
+                current.author = components[1 .. $ - 2].join(" ");
+                current.authorDate = components[$ - 2 .. $].parseGitDateTime;
             }
-            if (line.startsWith("committer ")) {
+            if (line.startsWith("committer "))
+            {
                 auto components = line.split(" ").array;
-                current.committer = components[1..$-2].join(" ");
-                current.committerDate = components[$-2..$].parseGitDateTime;
+                current.committer = components[1 .. $ - 2].join(" ");
+                current.committerDate = components[$ - 2 .. $].parseGitDateTime;
             }
 
-            if (line.startsWith("gpgsig ")) {
+            if (line.startsWith("gpgsig "))
+            {
                 // skip till next
-                while (!lines.front.empty) {
+                while (!lines.front.empty)
+                {
                     lines.popFront;
                 }
             }
-            if (line.startsWith("    ")) {
-                if (current.title == null) {
+            if (line.startsWith("    "))
+            {
+                if (current.title == null)
+                {
                     current.title = line.drop(4).to!string;
-                } else {
-                    if (!current.message.empty) {
+                }
+                else
+                {
+                    if (!current.message.empty)
+                    {
                         current.message ~= "\n";
-                    } else {
+                    }
+                    else
+                    {
                         current.message ~= line.drop(4).to!string;
                     }
                 }
             }
             lines.popFront;
         }
-        if (current !is null) {
+        if (current !is null)
+        {
             result ~= current;
         }
         return result;
     }
-    override string toString() {
-        return "GitCommit(project: %s, sha: %s, committer: %s, committerDate: %s, author: %s, authorDate: %s, title: %s, message: %s)".format(project, sha, committer, committerDate, author, authorDate, title, message);
+
+    override string toString()
+    {
+        return "GitCommit(project: %s, sha: %s, committer: %s, committerDate: %s, author: %s, authorDate: %s, title: %s, message: %s)"
+            .format(project, sha, committer, committerDate, author, authorDate, title, message);
     }
 }
 
 @("GitCommit.parse")
-unittest {
+unittest
+{
     import unit_threaded;
     import std.file;
+
     auto commits = GitCommit.parseCommits(Project(".", "blub"), readText("test/commits.txt"));
     commits.length.should == 7;
 
@@ -174,20 +196,14 @@ auto historyOfProject(Tuple!(Project, "project", Log, "log") projectAndParameter
     string gitDurationSpec = projectAndParameters.log.gitDurationSpec;
     auto trace = theProfiler.start("git log of project '%s'".format(project.shortPath));
     string[] args = [
-      "log",
-      "--pretty=raw",
-      "--since=%s".format(gitDurationSpec),
+        "log", "--pretty=raw", "--since=%s".format(gitDurationSpec),
     ];
     if (!projectAndParameters.log.author.empty)
     {
         args ~= "--author=%s".format(projectAndParameters.log.author);
     }
-    return project
-        .git(args)
-        .message("Get logs")
-        .run
-        .map!(output => GitCommit.parseCommits(project, output))
-        .front;
+    return project.git(args).message("Get logs")
+        .run.map!(output => GitCommit.parseCommits(project, output)).front;
 }
 
 struct State
@@ -195,24 +211,24 @@ struct State
     bool finished;
 }
 
-State state =
-{
-    finished: false,
-};
+State state = {finished: false,};
 
-class HistoryUi : Ui!(State) {
-    this(Terminal terminal) {
+class HistoryUi : Ui!(State)
+{
+    this(Terminal terminal)
+    {
         super(terminal);
     }
     /// handle input events
     override State handleKey(KeyInput input, State state)
     {
-        switch (input.input) {
+        switch (input.input)
+        {
         case "\x1B":
             state.finished = true;
             break;
         default:
-            roots[$-1].handleInput(input);
+            roots[$ - 1].handleInput(input);
             break;
         }
         return state;
@@ -226,6 +242,7 @@ class Details : Component
     {
         this.commit = commit;
     }
+
     override void render(Context context)
     {
         if (commit !is null)
@@ -237,7 +254,8 @@ class Details : Component
             context.putString(0, line++, "Author date: ".bold ~ commit.authorDate.to!string);
             context.putString(0, line++, "Committer: ".bold ~ commit.committer);
             context.putString(0, line++, "Committer date: ".bold ~ commit.committerDate.to!string);
-            context.putString(0, line++, "Δ: ".bold ~ (commit.committerDate-commit.authorDate).to!string);
+            context.putString(0, line++,
+                    "Δ: ".bold ~ (commit.committerDate - commit.authorDate).to!string);
             context.putString(0, line++, "Title: ".bold ~ commit.title);
             if (!commit.message.empty)
             {
@@ -245,12 +263,15 @@ class Details : Component
             }
         }
     }
-    override bool handlesInput() {
+
+    override bool handlesInput()
+    {
         return false;
     }
 }
 
-auto collectData(T)(T work, Log log) {
+auto collectData(T)(T work, Log log)
+{
     auto process = theProfiler.start("Collecting history of gits");
     auto taskPool = new TaskPool();
     scope (exit)
@@ -261,9 +282,7 @@ auto collectData(T)(T work, Log log) {
     "History for %s projects".format(projects.length).info();
 
     // auto results = projects.map!(historyOfProject).joiner.array;
-    return taskPool
-        .amap!(historyOfProject)(projects)
-        .filter!(commits => commits.length > 0)
+    return taskPool.amap!(historyOfProject)(projects).filter!(commits => commits.length > 0)
         .joiner
         .array
         .sort!((a, b) => a.committerDate > b.committerDate)
@@ -279,45 +298,48 @@ void historyTui(T, Results)(T work, Log log, Results results)
 
     auto details = new Details();
     auto scrolledDetails = new ScrollPane(details);
-    auto list =  new List!(
-        GitCommit,
-        gitCommit => "%s %s %s %s".format(
-            gitCommit.committerDate.to!string.leftJustify(26).take(26).to!string.yellow,
-            gitCommit.project.shortPath.leftJustify(20).take(20).to!string.red,
-            gitCommit.author.leftJustify(50).take(50).to!string.green,
-            gitCommit.title.leftJustify(30).take(30).to!string,
-        )
-    )(results);
+    auto list = new List!(GitCommit, gitCommit => "%s %s %s %s".format(
+            gitCommit.committerDate.to!string.leftJustify(26).take(26)
+            .to!string.yellow, gitCommit.project.shortPath.leftJustify(20)
+            .take(20).to!string.red, gitCommit.author.leftJustify(50).take(50)
+            .to!string.green, gitCommit.title.leftJustify(30).take(30).to!string,))(results);
     list.selectionChanged.connect(&details.newSelection);
-    if (!results.empty) {
+    if (!results.empty)
+    {
         list.select();
     }
     list.setInputHandler((input) {
-            if (input.input == "1") {
-                auto commit = list.getSelection();
-                auto command = ["gitk", "--all", "--select-commit=%s".format(commit.sha)];
-                Command(command).workdir(commit.project.path).spawn.wait;
-                return true;
-            }
-            if (input.input == "2") {
-                auto commit = list.getSelection();
-                auto command = ["tig", commit.sha];
-                Command(command).workdir(commit.project.path).spawn.wait;
-                return true;
-            }
-            if (input.input == "3") {
-                auto commit = list.getSelection();
-                auto command = ["magit", commit.project.path, commit.sha];
-                Command(command).spawn.wait;
-                return true;
-            }
-            return false;
-        });
+        if (input.input == "1")
+        {
+            auto commit = list.getSelection();
+            auto command = [
+                "gitk", "--all", "--select-commit=%s".format(commit.sha)
+            ];
+            Command(command).workdir(commit.project.path).spawn.wait;
+            return true;
+        }
+        if (input.input == "2")
+        {
+            auto commit = list.getSelection();
+            auto command = ["tig", commit.sha];
+            Command(command).workdir(commit.project.path).spawn.wait;
+            return true;
+        }
+        if (input.input == "3")
+        {
+            auto commit = list.getSelection();
+            auto command = ["magit", commit.project.path, commit.sha];
+            Command(command).spawn.wait;
+            return true;
+        }
+        return false;
+    });
     auto listAndDetails = new VSplit(132, // (+ 26 20 50 30 4 2)
-                                     list,
-                                     scrolledDetails);
-    string statusString = "Found %s commits in %s repositories matching criteria since='%s'".format(results.length, work.projects.length, log.gitDurationSpec);
-    if (!log.author.empty) {
+            list, scrolledDetails);
+    string statusString = "Found %s commits in %s repositories matching criteria since='%s'".format(
+            results.length, work.projects.length, log.gitDurationSpec);
+    if (!log.author.empty)
+    {
         statusString ~= " and author='%s'".format(log.author);
     }
     auto globalStatus = new Text(statusString);
@@ -336,7 +358,9 @@ void historyTui(T, Results)(T work, Log log, Results results)
         {
             ui.render();
             auto input = terminal.getInput();
-            import std.file : append; "key.log".append("read input: %s\n".format(input));
+            import std.file : append;
+
+            "key.log".append("read input: %s\n".format(input));
             state = ui.handleKey(input, state);
         }
         catch (NoKeyException e)

@@ -56,32 +56,18 @@ int worker_(Arguments arguments)
                              .add("License".bold).table);
             // dfmt on
             stderr.writeln("Packageinfo:\n", table.format.prefix("    ")
-                           .headerSeparator(true).columnSeparator(true).to!string);
+            .headerSeparator(true).columnSeparator(true).to!string);
             return true;
-        },
-        _ => false
-    )) return 0;
+        }, _ => false))
+        return 0;
 
-    auto projects = arguments.traversalMode == TraversalMode.WALK ? findGitsByWalking(arguments.baseDirectory) : findGitsFromManifest(arguments.baseDirectory);
+    auto projects = arguments.traversalMode == TraversalMode.WALK ? findGitsByWalking(
+            arguments.baseDirectory) : findGitsFromManifest(arguments.baseDirectory);
 
-    arguments.subcommand.match!(
-      (Review r)
-      {
-          projects.reviewChanges(r.command);
-      },
-      (Upload u)
-      {
-          projects.upload(arguments.dryRun, u.topic, u.hashtag, u.changeSetType);
-      },
-      (Execute e)
-      {
-          projects.executeCommand(e.command);
-      },
-      (Log l)
-      {
-          projects.history(l);
-      },
-      (_) {}
-    );
+    arguments.subcommand.match!((Review r) { projects.reviewChanges(r.command); }, (Upload u) {
+        projects.upload(arguments.dryRun, u.topic, u.hashtag, u.changeSetType);
+    }, (Execute e) { projects.executeCommand(e.command); }, (Log l) {
+        projects.history(l);
+    }, (_) {});
     return 0;
 }
