@@ -278,6 +278,7 @@ void historyTui(T, Results)(T work, Log log, Results results)
     auto ui = new HistoryUi(terminal);
 
     auto details = new Details();
+    auto scrolledDetails = new ScrollPane(details);
     auto list =  new List!(
         GitCommit,
         gitCommit => "%s %s %s %s".format(
@@ -314,7 +315,7 @@ void historyTui(T, Results)(T work, Log log, Results results)
         });
     auto listAndDetails = new VSplit(132, // (+ 26 20 50 30 4 2)
                                      list,
-                                     details);
+                                     scrolledDetails);
     string statusString = "Found %s commits in %s repositories matching criteria since='%s'".format(results.length, work.projects.length, log.gitDurationSpec);
     if (!log.author.empty) {
         statusString ~= " and author='%s'".format(log.author);
@@ -324,6 +325,7 @@ void historyTui(T, Results)(T work, Log log, Results results)
 
     // setup focus handling
     root.addToFocusComponents(list);
+    root.addToFocusComponents(scrolledDetails);
     list.requestFocus();
 
     ui.push(root);
