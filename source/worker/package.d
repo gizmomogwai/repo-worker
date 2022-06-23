@@ -5,10 +5,8 @@
  +/
 module worker;
 
-public import worker.packageversion;
-
-import androidlogger;
 import argparse;
+import androidlogger : AndroidLogger;
 import profiled : Profiler, theProfiler;
 import std.experimental.logger : LogLevel;
 import std.experimental.logger.core : sharedLog;
@@ -36,11 +34,11 @@ int worker_(Arguments arguments)
     // hack for version
     if (arguments.subcommand.match!((Version v) {
             import asciitable;
-            import packageversion;
+            import packageinfo;
             import colored;
 
             // dfmt off
-            auto table = packageversion
+            auto table = packageinfo
                 .getPackages
                 .sort!("a.name < b.name")
                 .fold!((table, p) =>

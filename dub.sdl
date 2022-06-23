@@ -7,22 +7,19 @@ x:ddoxFilterArgs "--min-protection=Private"
 
 dependency "optional" version="~>1.2.1"
 dependency "androidlogger" version="~>0.0.15"
-dependency "asciitable" version="~>0.0.12"
-dependency "dime" version="~>0.0.6"
+dependency "asciitable" version="~>0.0.13"
+dependency "dime" version="~>0.0.7"
 dependency "argparse" version="*"
 dependency "profiled" version="*"
 dependency "tui" version="*"
 
-preGenerateCommands "packageversion || dub run packageversion"
-sourceFiles "out/generated/packageversion/worker/packageversion.d"
-sourcePaths "source" "out/generated/packageversion"
-importPaths "source" "out/generated/packageversion"
-
-dependency "packageversion" version="~>0.0.19"
 
 configuration "application" {
   targetType "executable"
   targetPath "out/main"
+  preGenerateCommands "dub run packageinfo"
+  sourcePaths "source" "out/generated/packageinfo"
+  importPaths "source" "out/generated/packageinfo"
 }
 
 configuration "library" {
@@ -36,7 +33,7 @@ configuration "unittest" {
   targetType "executable"
   targetPath "out/test"
 
-  dependency "unit-threaded" version="~>2.0.3"
+  dependency "unit-threaded" version="~>2.0.4"
   preBuildCommands "dub run unit-threaded -c gen_ut_main -- -f out/generated/unit-threaded/testsuite.d"
   mainSourceFile "out/generated/unit-threaded/testsuite.d"
   excludedSourceFiles "source/app.d"
