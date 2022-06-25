@@ -13,7 +13,7 @@ void executeCommand(T)(T work, string command)
     auto status = 0;
     foreach (project; work.projects.sort!("a.base < b.base"))
     {
-        "Running %s in %s".format(command, project.path.asNormalizedPath).warning;
+        "Running %s in %s".format(command, project.path.asNormalizedPath).info;
         auto sw = StopWatch(AutoStart.yes);
         auto res = command.executeShell(null, std.process.Config.none, size_t.max, project.path);
         if (res.status != 0)
@@ -33,7 +33,7 @@ void executeCommand(T)(T work, string command)
         // dfmt on
         auto output = res.output.strip;
         if (res.status == 0) {
-            description.warning;
+            description.info;
             output.info;
         } else {
             description.error;
