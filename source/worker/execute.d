@@ -22,19 +22,22 @@ void executeCommand(T)(T work, string command)
         }
         auto duration = sw.peek().total!("msecs");
         // dfmt off
-        auto description = "Finished with %s in %s"
+        auto description = "Finished with %s in %s (%s)"
             .format(res.status,
                     TIME
-                    .transform(duration)
-                    .onlyRelevant
-                    .map!(p => "%s%s".format(p.value, p.name))
-                    .join(" "));
+                        .transform(duration)
+                        .onlyRelevant
+                        .map!(p => "%s%s".format(p.value, p.name))
+                        .join(" "),
+                    project.path.asNormalizedPath);
         // dfmt on
         auto output = res.output.strip;
-        description.warning;
-        if (output != null)
-        {
-            res.status == 0 ? output.info : output.error;
+        if (res.status == 0) {
+            description.warning;
+            output.info;
+        } else {
+            description.error;
+            output.error;
         }
     }
 }
