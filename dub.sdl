@@ -13,7 +13,6 @@ dependency "argparse" version="*"
 dependency "profiled" version="*"
 dependency "tui" version="*"
 
-
 configuration "application" {
   targetType "executable"
   targetPath "out/main"
@@ -26,7 +25,7 @@ configuration "library" {
   targetType "library"
   targetPath "out/lib"
 
-  excludedSourceFiles "source/app.d"
+  excludedSourceFiles "source/app.d" "source/testsuite.d"
 }
 
 configuration "unittest" {
@@ -34,7 +33,6 @@ configuration "unittest" {
   targetPath "out/test"
 
   dependency "unit-threaded" version="~>2.0.4"
-  preBuildCommands "dub run unit-threaded -c gen_ut_main -- -f out/generated/unit-threaded/testsuite.d"
-  mainSourceFile "out/generated/unit-threaded/testsuite.d"
+  mainSourceFile "source/testsuite.d"
   excludedSourceFiles "source/app.d"
 }
