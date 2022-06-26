@@ -31,45 +31,28 @@ int worker_(Arguments arguments)
 
     sharedLog = new AndroidLogger(stderr, arguments.withColors, arguments.logLevel);
 
-    // hack for version
-    version (unittest )
-    {
-    } else {
-        if (arguments.subcommand.match!((Version v) {
-                    import asciitable;
-                    import packageinfo;
-                    import colored;
+    auto projects = arguments.traversalMode == TraversalMode.WALK ?
+        findGitsByWalking(arguments.baseDirectory)
+        : findGitsFromManifest(arguments.baseDirectory);
 
-                    // dfmt off
-                    auto table = packageinfo
-                        .getPackages
-                        .sort!("a.name < b.name")
-                        .fold!((table, p) =>
-                               table
-                               .row
-                               .add(p.name.white)
-                               .add(p.semVer.lightGray)
-                               .add(p.license.lightGray).table)
-                        (new AsciiTable(3)
-                         .header
-                         .add("Package".bold)
-                         .add("Version".bold)
-                         .add("License".bold).table);
-                    // dfmt on
-                    stderr.writeln("Packageinfo:\n", table.format.prefix("    ")
-                                   .headerSeparator(true).columnSeparator(true).to!string);
-                    return true;
-                }, _ => false))
-        return 0;
-    }
-
-    auto projects = arguments.traversalMode == TraversalMode.WALK ? findGitsByWalking(
-            arguments.baseDirectory) : findGitsFromManifest(arguments.baseDirectory);
-
-    arguments.subcommand.match!((Review r) { projects.reviewChanges(r.command); }, (Upload u) {
-        projects.upload(arguments.dryRun, u.topic, u.hashtag, u.changeSetType);
-    }, (Execute e) { projects.executeCommand(e.command); }, (Log l) {
-        projects.history(l);
-    }, (_) {});
+    // dfmt off
+    arguments.subcommand.match!(
+        (Review r)
+        {
+            projects.reviewChanges(r.command);
+        },
+        (Upload u)
+        {
+            projects.upload(arguments.dryRun, u.topic, u.hashtag, u.changeSetType);
+        },
+        (Execute e)
+        {
+            projects.executeCommand(e.command);
+        },
+        (Log l)
+        {
+            projects.history(l);
+        },
+    );
     return 0;
 }

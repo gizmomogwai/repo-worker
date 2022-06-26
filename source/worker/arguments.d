@@ -28,12 +28,6 @@ struct Execute
     @NamedArgument string command = "git status";
 }
 
-@(Command("version", "v").Description("Show version information."))
-struct Version
-{
-    @NamedArgument bool v;
-}
-
 @(Command("log", "l"))
 struct Log
 {
@@ -45,6 +39,33 @@ struct Log
     string author;
 }
 
+import packageinfo;
+import asciitable : AsciiTable;
+import std.algorithm : sort, fold;
+import colored : bold, white, lightGray;
+import std.conv : to;
+//dfmt off
+@(Command("Works on a set of git projects")
+  .Epilog(() => "PackageInfo:\n" ~ packageinfo
+                        .getPackages
+                        .sort!("a.name < b.name")
+                        .fold!((table, p) =>
+                               table
+                               .row
+                                   .add(p.name.white)
+                                   .add(p.semVer.lightGray)
+                                   .add(p.license.lightGray).table)
+                            (new AsciiTable(3)
+                                .header
+                                    .add("Package".bold)
+                                    .add("Version".bold)
+                             .add("License".bold).table)
+                        .format
+                            .prefix("    ")
+                            .headerSeparator(true)
+                            .columnSeparator(true)
+                        .to!string))
+// dfmt on
 struct Arguments
 {
     @ArgumentGroup("Common arguments")
@@ -65,5 +86,5 @@ struct Arguments
         @(NamedArgument("logLevel", "l").Description("Set logging level."))
         LogLevel logLevel;
     }
-    @SubCommands SumType!(Default!Review, Upload, Execute, Version, Log) subcommand;
+    @SubCommands SumType!(Default!Review, Upload, Execute, Log) subcommand;
 }

@@ -9,16 +9,17 @@ dependency "optional" version="~>1.2.1"
 dependency "androidlogger" version="~>0.0.16"
 dependency "asciitable" version="~>0.0.14"
 dependency "dime" version="~>0.0.8"
-dependency "argparse" version="*"
+dependency "argparse" version="~master"
 dependency "profiled" version="*"
 dependency "tui" version="*"
 
 configuration "application" {
   targetType "executable"
   targetPath "out/main"
-  preGenerateCommands "dub run packageinfo"
-  sourcePaths "source" "out/generated/packageinfo"
-  importPaths "source" "out/generated/packageinfo"
+
+  preGenerateCommands "$DUB run packageinfo"
+  sourcePaths "source" "out/generated/"
+  importPaths "source" "out/generated/"
 }
 
 configuration "library" {
@@ -35,4 +36,8 @@ configuration "unittest" {
   dependency "unit-threaded" version="~>2.0.4"
   mainSourceFile "source/testsuite.d"
   excludedSourceFiles "source/app.d"
+
+  preGenerateCommands "$DUB run packageinfo"
+  sourcePaths "source" "out/generated/"
+  importPaths "source" "out/generated/"
 }
