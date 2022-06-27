@@ -44,10 +44,14 @@ import asciitable : AsciiTable;
 import std.algorithm : sort, fold;
 import colored : bold, white, lightGray;
 import std.conv : to;
+static foreach (p; packageinfo.packages)
+{
+    pragma(msg, p);
+}
 //dfmt off
 @(Command("Works on a set of git projects")
   .Epilog(() => "PackageInfo:\n" ~ packageinfo
-                        .getPackages
+                        .packages
                         .sort!("a.name < b.name")
                         .fold!((table, p) =>
                                table
