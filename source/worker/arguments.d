@@ -39,11 +39,11 @@ struct Log
     string author;
 }
 
-import packageinfo;
 import asciitable : AsciiTable;
 import std.algorithm : sort, fold;
 import colored : bold, white, lightGray;
 import std.conv : to;
+import packageinfo;
 static foreach (p; packageinfo.packages)
 {
     pragma(msg, p);

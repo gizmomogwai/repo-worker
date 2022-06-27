@@ -18,8 +18,8 @@ configuration "application" {
   targetPath "out/main"
 
   preGenerateCommands "$DUB run packageinfo"
-  sourcePaths "source" "out/generated/"
-  importPaths "source" "out/generated/"
+  sourcePaths "source" "out/generated/packageinfo"
+  importPaths "source" "out/generated/packageinfo"
 }
 
 configuration "library" {
