@@ -1,23 +1,18 @@
 {
 	"fileVersion": 1,
 	"versions": {
-		"androidlogger": "0.0.16",
-		"argparse": "~master",
-		"asciitable": "0.0.14",
+		"androidlogger": "0.0.17",
+		"argparse": "1.1.0",
+		"asciitable": "0.0.16",
 		"bolts": "1.3.1",
 		"color": "0.0.9",
-		"colored": "0.0.27",
-		"colorize": "1.0.5",
-		"d-option": "0.0.7",
-		"dime": "0.0.8",
-		"ncurses": "~master",
+		"colored": "0.0.28",
+		"dime": "0.0.8+commit.1.gfb6045f",
 		"optional": "1.2.1",
-		"packageversion": "0.0.19",
-		"profiled": "~master",
-		"silly": "1.1.1",
+		"profiled": "~main",
 		"stdx-allocator": "2.77.5",
-		"tui": "~master",
-		"unit-threaded": "2.0.4",
-		"vibe-d": "0.9.4"
+		"tui": "~main",
+		"unit-threaded": "2.1.1",
+		"vibe-d": "0.9.5"
 	}
 }

@@ -213,28 +213,6 @@ struct State
 
 State state = {finished: false,};
 
-class HistoryUi : Ui!(State)
-{
-    this(Terminal terminal)
-    {
-        super(terminal);
-    }
-    /// handle input events
-    override State handleKey(KeyInput input, State state)
-    {
-        switch (input.input)
-        {
-        case "\x1B":
-            state.finished = true;
-            break;
-        default:
-            roots[$ - 1].handleInput(input);
-            break;
-        }
-        return state;
-    }
-}
-
 class Details : Component
 {
     GitCommit commit;
@@ -294,8 +272,6 @@ void historyTui(T, Results)(T work, Log log, Results results)
     KeyInput keyInput;
     scope terminal = new Terminal();
 
-    auto ui = new HistoryUi(terminal);
-
     auto details = new Details();
     auto scrolledDetails = new ScrollPane(details);
     // dfmt off
@@ -347,23 +323,28 @@ void historyTui(T, Results)(T work, Log log, Results results)
     }
     auto globalStatus = new Text(statusString);
     auto root = new HSplit(-1, listAndDetails, globalStatus);
+    root.setInputHandler((input)
+                         {
+                             if (input.input == "\x1B")
+                             {
+                                 state.finished=true;
+                                 return true;
+                             }
+                             return false;
+                         });
 
+    auto ui = new Ui(terminal);
     ui.push(root);
     ui.resize();
+
     while (!state.finished)
     {
-        try
-        {
-            ui.render();
-            auto input = terminal.getInput();
-            import std.file : append;
+        ui.render();
+        auto input = terminal.getInput();
+        import std.file : append;
 
-            "key.log".append("read input: %s\n".format(input));
-            state = ui.handleKey(input, state);
-        }
-        catch (NoKeyException e)
-        {
-        }
+        "key.log".append("read input: %s\n".format(input));
+        ui.handleInput(cast()input);
     }
 }
 

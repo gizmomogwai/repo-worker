@@ -29,7 +29,7 @@ int worker_(Arguments arguments)
     scope (exit)
         theProfiler.dumpJson("trace.json");
 
-    sharedLog = new AndroidLogger(stderr, arguments.withColors, arguments.logLevel);
+    sharedLog = new AndroidLogger(stderr, arguments.withColors == Config.StylingMode.on, arguments.logLevel);
 
     auto projects = arguments.traversalMode == TraversalMode.WALK ?
         findGitsByWalking(arguments.baseDirectory)
@@ -54,5 +54,6 @@ int worker_(Arguments arguments)
             projects.history(l);
         },
     );
+    // dfmt on
     return 0;
 }

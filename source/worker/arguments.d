@@ -1,11 +1,16 @@
 module worker.arguments;
 
-import worker.traversal : TraversalMode;
-import worker.common : ChangeSetType;
-import std.sumtype : SumType;
-
 import argparse;
+import asciitable : AsciiTable;
+import colored : bold, white, lightGray;
+import core.runtime : Runtime;
+import packageinfo : packages;
+import std.algorithm : sort, fold;
+import std.conv : to;
 import std.experimental.logger : LogLevel;
+import std.sumtype : SumType;
+import worker.common : ChangeSetType;
+import worker.traversal : TraversalMode;
 
 // Commandline parsing
 @(Command("review", "r").Description("Show changes of all subprojects."))
@@ -39,31 +44,31 @@ struct Log
     string author;
 }
 
-import asciitable : AsciiTable;
-import std.algorithm : sort, fold;
-import colored : bold, white, lightGray;
-import std.conv : to;
-import packageinfo;
-static foreach (p; packageinfo.packages)
+static foreach (p; packages)
 {
     pragma(msg, p);
 }
+
+auto color(T)(string s, T color)
+{
+    return Arguments.withColors == Config.StylingMode.on ? color(s).to!string : s;
+}
+
 //dfmt off
-@(Command("Works on a set of git projects")
-  .Epilog(() => "PackageInfo:\n" ~ packageinfo
-                        .packages
+@(Command(null)
+  .Epilog(() => "PackageInfo:\n" ~ packages
                         .sort!("a.name < b.name")
                         .fold!((table, p) =>
                                table
                                .row
-                                   .add(p.name.white)
-                                   .add(p.semVer.lightGray)
-                                   .add(p.license.lightGray).table)
+                                   .add(p.name.color(&white))
+                                   .add(p.semVer.color(&lightGray))
+                                   .add(p.license.color(&lightGray)).table)
                             (new AsciiTable(3)
                                 .header
-                                    .add("Package".bold)
-                                    .add("Version".bold)
-                             .add("License".bold).table)
+                                    .add("Package".color(&bold))
+                                    .add("Version".color(&bold))
+                                    .add("License".color(&bold)).table)
                         .format
                             .prefix("    ")
                             .headerSeparator(true)
@@ -78,7 +83,7 @@ struct Arguments
         bool dryRun = false;
 
         @(NamedArgument.Description("Use ANSI colors in output."))
-        bool withColors = true;
+        static auto withColors = ansiStylingArgument;
 
         @(NamedArgument("traversalMode", "mode")
                 .Description("Find subprojects with repo or filesystem."))

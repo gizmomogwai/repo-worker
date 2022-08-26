@@ -7,9 +7,9 @@ x:ddoxFilterArgs "--min-protection=Private"
 
 dependency "optional" version="~>1.2.1"
 dependency "androidlogger" version="~>0.0.16"
-dependency "asciitable" version="~>0.0.14"
+dependency "asciitable" version="~>0.0.16"
 dependency "dime" version="~>0.0.8"
-dependency "argparse" version="~master"
+dependency "argparse" version="~>1.1.0"
 dependency "profiled" version="*"
 dependency "tui" version="*"
 
@@ -33,11 +33,13 @@ configuration "unittest" {
   targetType "executable"
   targetPath "out/test"
 
-  dependency "unit-threaded" version="~>2.0.4"
+  dependency "unit-threaded" version="~>2.1.1"
   mainSourceFile "source/testsuite.d"
   excludedSourceFiles "source/app.d"
 
   preGenerateCommands "$DUB run packageinfo"
   sourcePaths "source" "out/generated/"
   importPaths "source" "out/generated/"
+
+  postRunCommands "$DUB run lst2errormessages || true"
 }

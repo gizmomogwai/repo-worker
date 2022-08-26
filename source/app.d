@@ -5,10 +5,9 @@
  +/
 
 import argparse;
-import worker;
+import worker : worker_;
+import worker.arguments : Arguments;
 
-mixin CLI!(worker.Arguments).main!((arguments) {
-    import worker : worker_;
-
+mixin CLI!(Arguments).main!((arguments) {
     return worker_(arguments);
 });
