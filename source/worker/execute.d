@@ -32,10 +32,13 @@ void executeCommand(T)(T work, string command)
                     project.path.asNormalizedPath);
         // dfmt on
         auto output = res.output.strip;
-        if (res.status == 0) {
+        if (res.status == 0)
+        {
             description.info;
             output.info;
-        } else {
+        }
+        else
+        {
             description.error;
             output.error;
         }

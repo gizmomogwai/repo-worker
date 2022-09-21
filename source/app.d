@@ -8,6 +8,4 @@ import argparse;
 import worker : worker_;
 import worker.arguments : Arguments;
 
-mixin CLI!(Arguments).main!((arguments) {
-    return worker_(arguments);
-});
+mixin CLI!(Arguments).main!((arguments) { return worker_(arguments); });

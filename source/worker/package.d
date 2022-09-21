@@ -5,8 +5,8 @@
  +/
 module worker;
 
-import argparse;
 import androidlogger : AndroidLogger;
+import argparse;
 import profiled : Profiler, theProfiler;
 import std.experimental.logger : LogLevel;
 import std.experimental.logger.core : sharedLog;
@@ -29,11 +29,11 @@ int worker_(Arguments arguments)
     scope (exit)
         theProfiler.dumpJson("trace.json");
 
-    sharedLog = new AndroidLogger(stderr, arguments.withColors == Config.StylingMode.on, arguments.logLevel);
+    sharedLog = new AndroidLogger(stderr,
+            arguments.withColors == Config.StylingMode.on, arguments.logLevel);
 
-    auto projects = arguments.traversalMode == TraversalMode.WALK ?
-        findGitsByWalking(arguments.baseDirectory)
-        : findGitsFromManifest(arguments.baseDirectory);
+    auto projects = arguments.traversalMode == TraversalMode.WALK ? findGitsByWalking(
+            arguments.baseDirectory) : findGitsFromManifest(arguments.baseDirectory);
 
     // dfmt off
     arguments.subcommand.match!(

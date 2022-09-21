@@ -323,15 +323,14 @@ void historyTui(T, Results)(T work, Log log, Results results)
     }
     auto globalStatus = new Text(statusString);
     auto root = new HSplit(-1, listAndDetails, globalStatus);
-    root.setInputHandler((input)
-                         {
-                             if (input.input == "\x1B")
-                             {
-                                 state.finished=true;
-                                 return true;
-                             }
-                             return false;
-                         });
+    root.setInputHandler((input) {
+        if (input.input == "\x1B")
+        {
+            state.finished = true;
+            return true;
+        }
+        return false;
+    });
 
     auto ui = new Ui(terminal);
     ui.push(root);
@@ -344,7 +343,7 @@ void historyTui(T, Results)(T work, Log log, Results results)
         import std.file : append;
 
         "key.log".append("read input: %s\n".format(input));
-        ui.handleInput(cast()input);
+        ui.handleInput(cast() input);
     }
 }
 

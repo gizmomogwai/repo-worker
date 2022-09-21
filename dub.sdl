@@ -6,12 +6,12 @@ license "MIT"
 x:ddoxFilterArgs "--min-protection=Private"
 
 dependency "optional" version="~>1.2.1"
-dependency "androidlogger" version="~>0.0.16"
+dependency "androidlogger" version="~>0.0.19"
 dependency "asciitable" version="~>0.0.16"
-dependency "dime" version="~>0.0.8"
-dependency "argparse" version="~>1.1.0"
+dependency "dime" version="~>0.0.9"
+dependency "argparse" version="~>1.2.0"
 dependency "profiled" version="*"
-dependency "tui" version="*"
+dependency "tui" version="~>0.0.1"
 
 configuration "application" {
   targetType "executable"
@@ -33,7 +33,7 @@ configuration "unittest" {
   targetType "executable"
   targetPath "out/test"
 
-  dependency "unit-threaded" version="~>2.1.1"
+  dependency "unit-threaded" version="~>2.1.2"
   mainSourceFile "source/testsuite.d"
   excludedSourceFiles "source/app.d"
 
