@@ -41,7 +41,7 @@ void review(string command)
         receive(
             (Project project)
             {
-                string h = command.replace("%s", project.path);
+                string h = command.replace("%s", project.absolutePath);
                 "reviewer: running review: '%s'".format(h).info;
                 auto res = executeShell(h);
             },
@@ -80,12 +80,11 @@ void checker(Tid scheduler, Tid reviewer)
             {
                 project
                     .git("status")
-                    .message("checker: getting status for '%s'".format(project.shortPath))
+                    .message("checker: getting status for '%s'".format(project.relativePath))
                     .run
                     .each!((string output) {
                             auto dirty = output.dirty;
-                            "checker: '%s' is %s".format(project.shortPath,
-                                                         dirty).info;
+                            "checker: '%s' is %s".format(project.relativePath, dirty).info;
                             if (dirty == State.dirty)
                             {
                                 reviewer.send(project);

@@ -283,7 +283,7 @@ string calcUploadText(UploadInfo[Branch] uploadInfos)
         {
             if (firstCommitForProject)
             {
-                project ~= "# PROJECT %s\n".format(branch.project.shortPath());
+                project ~= "# PROJECT %s\n".format(branch.project.relativePath);
                 firstCommitForProject = false;
             }
             if (firstCommitForBranch)

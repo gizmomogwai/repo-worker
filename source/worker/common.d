@@ -81,14 +81,15 @@ struct Command
 
 struct Project
 {
-    string base;
-    string path;
+    private string base;
+    private string path;
     this(string base, string s)
     {
         this.base = base.asAbsolutePath.asNormalizedPath.array;
         if (s[0] == '/')
         {
             this.path = s.asAbsolutePath.asNormalizedPath.array;
+            assert(0);
         }
         else
         {
@@ -96,6 +97,10 @@ struct Project
         }
     }
 
+    string absolutePath()
+    {
+        return path;
+    }
     auto git(string[] args...)
     {
         auto workTree = this.path;
@@ -104,7 +109,7 @@ struct Project
         return Command(cmd);
     }
 
-    string shortPath()
+    string relativePath()
     {
         string result = path.asAbsolutePath.asNormalizedPath.array.replace(base, "");
         if (result[0] == '/')

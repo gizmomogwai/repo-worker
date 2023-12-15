@@ -194,7 +194,7 @@ auto historyOfProject(Tuple!(Project, "project", Log, "log") projectAndParameter
 {
     Project project = projectAndParameters.project;
     string gitDurationSpec = projectAndParameters.log.gitDurationSpec;
-    auto trace = theProfiler.start("git log of project '%s'".format(project.shortPath));
+    auto trace = theProfiler.start("git log of project '%s'".format(project.relativePath));
     string[] args = [
         "log", "--pretty=raw", "--since=%s".format(gitDurationSpec),
     ];
@@ -226,7 +226,7 @@ class Details : Component
         if (commit !is null)
         {
             int line = 0;
-            context.putString(0, line++, "Project: ".bold ~ commit.project.shortPath);
+            context.putString(0, line++, "Project: ".bold ~ commit.project.relativePath);
             context.putString(0, line++, "SHA: ".bold ~ commit.sha);
             context.putString(0, line++, "Author: ".bold ~ commit.author);
             context.putString(0, line++, "Author date: ".bold ~ commit.authorDate.to!string);
@@ -279,7 +279,7 @@ void historyTui(T, Results)(T work, Log log, Results results)
         GitCommit,
         gitCommit => "%s %s %s %s".format(
             gitCommit.committerDate.to!string.leftJustify(26).take(26).to!string.yellow,
-            gitCommit.project.shortPath.leftJustify(20).take(20).to!string.red,
+            gitCommit.project.relativePath.leftJustify(20).take(20).to!string.red,
             gitCommit.author.leftJustify(50).take(50).to!string.green,
             gitCommit.title.leftJustify(30).take(30).to!string,
       ))(results);
@@ -296,18 +296,18 @@ void historyTui(T, Results)(T work, Log log, Results results)
             auto command = [
                 "gitk", "--all", "--select-commit=%s".format(commit.sha)
             ];
-            Command(command).workdir(commit.project.path).spawn.wait;
+            Command(command).workdir(commit.project.absolutePath).spawn.wait;
             return true;
         }
         if (input.input == "2")
         {
             auto command = ["tig", commit.sha];
-            Command(command).workdir(commit.project.path).spawn.wait;
+            Command(command).workdir(commit.project.absolutePath).spawn.wait;
             return true;
         }
         if (input.input == "3")
         {
-            auto command = ["magit", commit.project.path, commit.sha];
+            auto command = ["magit", commit.project.absolutePath, commit.sha];
             Command(command).spawn.wait;
             return true;
         }

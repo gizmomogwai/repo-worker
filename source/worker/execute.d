@@ -11,11 +11,11 @@ import unit : TIME, onlyRelevant;
 void executeCommand(T)(T work, string command)
 {
     auto status = 0;
-    foreach (project; work.projects.sort!("a.base < b.base"))
+    foreach (project; work.projects.sort!("a.relativePath < b.relativePath"))
     {
-        "Running %s in %s".format(command, project.path.asNormalizedPath).info;
+        "Running %s in %s".format(command, project.absolutePath).info;
         auto sw = StopWatch(AutoStart.yes);
-        auto res = command.executeShell(null, std.process.Config.none, size_t.max, project.path);
+        auto res = command.executeShell(null, std.process.Config.none, size_t.max, project.absolutePath);
         if (res.status != 0)
         {
             status = res.status;
@@ -29,7 +29,7 @@ void executeCommand(T)(T work, string command)
                         .onlyRelevant
                         .map!(p => "%s%s".format(p.value, p.name))
                         .join(" "),
-                    project.path.asNormalizedPath);
+                    project.absolutePath);
         // dfmt on
         auto output = res.output.strip;
         if (res.status == 0)
