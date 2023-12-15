@@ -106,7 +106,12 @@ struct Project
 
     string shortPath()
     {
-        return path.asAbsolutePath.asNormalizedPath.array.replace(base, "");
+        string result = path.asAbsolutePath.asNormalizedPath.array.replace(base, "");
+        if (result[0] == '/')
+        {
+            result = result[1..$];
+        }
+        return result;
     }
 }
 
