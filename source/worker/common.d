@@ -89,7 +89,6 @@ struct Project
         if (s[0] == '/')
         {
             this.path = s.asAbsolutePath.asNormalizedPath.array;
-            assert(0);
         }
         else
         {
@@ -101,6 +100,7 @@ struct Project
     {
         return path;
     }
+
     auto git(string[] args...)
     {
         auto workTree = this.path;

@@ -1,6 +1,12 @@
 module worker.arguments;
 
-import argparse;
+import argparse.api.argument : NamedArgument, Description;
+import argparse.api.argumentgroup : ArgumentGroup;
+import argparse.api.command : Command, Epilog, Description;
+import argparse.api.subcommand : SubCommand, Default;
+import argparse.config : Config;
+import argparse.api.ansi : ansiStylingArgument;
+
 import asciitable : AsciiTable;
 import colored : bold, white, lightGray;
 import core.runtime : Runtime;
@@ -8,7 +14,6 @@ import packageinfo : packages;
 import std.algorithm : sort, fold;
 import std.conv : to;
 import std.experimental.logger : LogLevel;
-import std.sumtype : SumType;
 import worker.common : ChangeSetType;
 import worker.traversal : TraversalMode;
 
@@ -37,7 +42,7 @@ struct Execute
 struct Log
 {
     @(NamedArgument("durationSpec", "d").Description("A git duration spec (e.g. 10 days)"))
-    string gitDurationSpec;
+    string gitDurationSpec = "1w";
 
     @(NamedArgument("author")
             .Description("Filter by author (e.g. john.doe@foobar.com or foobar.com)"))
@@ -51,7 +56,7 @@ static foreach (p; packages)
 
 auto color(T)(string s, T color)
 {
-    return Arguments.withColors == Config.StylingMode.on ? color(s).to!string : s;
+    return Arguments.withColors ? color(s).to!string : s;
 }
 
 //dfmt off
@@ -95,5 +100,5 @@ struct Arguments
         @(NamedArgument("logLevel", "l").Description("Set logging level."))
         LogLevel logLevel;
     }
-    @SubCommands SumType!(Default!Review, Upload, Execute, Log) subcommand;
+    SubCommand!(Default!Review, Upload, Execute, Log) subcommand;
 }

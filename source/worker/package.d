@@ -6,22 +6,21 @@
 module worker;
 
 import androidlogger : AndroidLogger;
-import argparse;
+import argparse.config : Config;
+import argparse.api.subcommand : match;
 import profiled : Profiler, theProfiler;
-import std.experimental.logger : LogLevel;
-import std.experimental.logger.core : sharedLog;
-import std.sumtype : SumType, match;
-import std.stdio : stderr;
 import std.algorithm : sort, fold;
 import std.conv : to;
-
-import worker.common;
-import worker.traversal;
-import worker.review;
-import worker.history;
-import worker.upload;
-import worker.execute;
+import std.experimental.logger : LogLevel;
+import std.experimental.logger.core : sharedLog;
+import std.stdio : stderr;
 import worker.arguments;
+import worker.common;
+import worker.execute;
+import worker.history;
+import worker.review;
+import worker.traversal;
+import worker.upload;
 
 int worker_(Arguments arguments)
 {
@@ -30,7 +29,8 @@ int worker_(Arguments arguments)
         theProfiler.dumpJson("trace.json");
 
     sharedLog = cast(shared)new AndroidLogger(stderr,
-            arguments.withColors == Config.StylingMode.on, arguments.logLevel);
+                                              arguments.withColors ? true : false,
+                                              arguments.logLevel);
 
     auto projects = arguments.traversalMode == TraversalMode.WALK ? findGitsByWalking(
             arguments.baseDirectory) : findGitsFromManifest(arguments.baseDirectory);

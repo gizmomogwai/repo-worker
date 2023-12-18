@@ -11,3 +11,4 @@ out
 /trace.json
 *~
 /key.log
+*.lst
