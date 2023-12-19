@@ -1,12 +1,6 @@
 module worker.arguments;
 
-import argparse.api.argument : NamedArgument, Description;
-import argparse.api.argumentgroup : ArgumentGroup;
-import argparse.api.command : Command, Epilog, Description;
-import argparse.api.subcommand : SubCommand, Default;
-import argparse.config : Config;
-import argparse.api.ansi : ansiStylingArgument;
-
+import argparse : ArgumentGroup, Command, Config, Default, Description, Epilog, NamedArgument, SubCommand, ansiStylingArgument;
 import asciitable : AsciiTable;
 import colored : bold, white, lightGray;
 import core.runtime : Runtime;
