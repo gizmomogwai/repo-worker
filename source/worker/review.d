@@ -1,15 +1,15 @@
 module worker.review;
 
-import worker.common;
-import std.string : format, replace, indexOf;
-import std.experimental.logger : info, trace;
-import std.typecons : Tuple;
-import std.concurrency : Tid, thisTid, receive, send, spawnLinked, receiveOnly, LinkTerminated;
-import std.process : executeShell;
 import std.algorithm : each;
 import std.array : empty, front, popFront;
+import std.concurrency : LinkTerminated, receive, receiveOnly, send, spawnLinked, thisTid, Tid;
+import std.experimental.logger : info, trace;
 import std.parallelism;
+import std.process : executeShell;
 import std.range : iota;
+import std.string : format, indexOf, replace;
+import std.typecons : Tuple;
+import worker.common;
 
 // Worker
 struct Shutdown

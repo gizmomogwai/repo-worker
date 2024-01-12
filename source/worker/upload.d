@@ -1,17 +1,17 @@
 module worker.upload;
 
-import worker.common : Project, Commit, ChangeSetType;
-import std.algorithm : map, filter;
-import std.string : format, split, strip, replace, join;
-import std.regex : ctRegex, matchFirst;
+import std.algorithm : filter, map;
 import std.array : empty, front, popFront;
-import std.experimental.logger : info;
-import std.conv : to;
 import std.array : array;
+import std.conv : to;
+import std.experimental.logger : info;
 import std.file;
-import std.process : environment, spawnProcess, wait;
 import std.file : remove;
+import std.process : environment, spawnProcess, wait;
+import std.regex : ctRegex, matchFirst;
 import std.stdio : File;
+import std.string : format, join, replace, split, strip;
+import worker.common : ChangeSetType, Commit, Project;
 
 struct UploadInfo
 {

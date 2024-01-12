@@ -1,12 +1,12 @@
 module worker.execute;
 
-import std.algorithm : sort, map;
-import std.experimental.logger : warning, info, error;
-import std.string : format, join, strip;
-import std.process;
+import std.algorithm : map, sort;
+import std.datetime.stopwatch : AutoStart, StopWatch;
+import std.experimental.logger : error, info, warning;
 import std.path : asNormalizedPath;
-import std.datetime.stopwatch : StopWatch, AutoStart;
-import unit : TIME, onlyRelevant;
+import std.process;
+import std.string : format, join, strip;
+import unit : onlyRelevant, TIME;
 
 void executeCommand(T)(T work, string command)
 {

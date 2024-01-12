@@ -1,23 +1,23 @@
 module worker.history;
 
-import tui;
 import colored;
-import worker.common : Project, Command;
-import worker.arguments : Log;
 import core.time : dur;
-import std.datetime : SysTime, unixTimeToStdTime, SimpleTimeZone;
-import std.typecons : Tuple, tuple;
-import std.conv : to;
-import std.string : split, startsWith, join, format, leftJustify;
-import std.array : empty, front, popFront, array;
-import std.experimental.logger : trace, error, info;
 import profiled : theProfiler;
-import std.process;
+import std.algorithm : filter, fold, joiner, map, sort;
+import std.array : array, empty, front, popFront;
+import std.conv : to;
+import std.datetime : SimpleTimeZone, SysTime, unixTimeToStdTime;
+import std.experimental.logger : error, info, trace;
 import std.parallelism : TaskPool;
-import std.algorithm : map, filter, sort, joiner, fold;
-import std.range : take, drop;
-import std.traits : ReturnType;
+import std.process;
+import std.range : drop, take;
 import std.regex : matchAll;
+import std.string : format, join, leftJustify, split, startsWith;
+import std.traits : ReturnType;
+import std.typecons : Tuple, tuple;
+import tui;
+import worker.arguments : Log;
+import worker.common : Command, Project;
 
 version (unittest) {
     import unit_threaded : should;
@@ -27,7 +27,7 @@ version (unittest) {
 static immutable(SimpleTimeZone) simpleTimeZonefromISOString(S)(S isoString) @safe pure
 {
     import std.algorithm.searching : startsWith;
-    import std.conv : text, to, ConvException;
+    import std.conv : ConvException, text, to;
     import std.datetime.date : DateTimeException;
     import std.exception : enforce;
 
@@ -184,8 +184,8 @@ class GitCommit
 @("GitCommit.parse")
 unittest
 {
-    import unit_threaded;
     import std.file;
+    import unit_threaded;
 
     auto commits = GitCommit.parseCommits(Project(".", "blub"), readText("test/commits.txt"));
     commits.length.should == 7;

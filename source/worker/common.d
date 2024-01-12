@@ -1,12 +1,12 @@
 module worker.common;
 
-import optional : Optional, no, some;
-import std.experimental.logger : trace, error;
-import std.string : format, join, replace, indexOf, strip;
-import std.process : execute, Config, spawnProcess, Pid;
-import std.path : asAbsolutePath, asNormalizedPath;
+import optional : no, Optional, some;
 import std.array : array;
+import std.experimental.logger : error, trace;
+import std.path : asAbsolutePath, asNormalizedPath;
+import std.process : Config, execute, Pid, spawnProcess;
 import std.range : chain;
+import std.string : format, indexOf, join, replace, strip;
 
 enum ChangeSetType
 {

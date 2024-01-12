@@ -1,15 +1,15 @@
 module worker.traversal;
 
-import std.path : asAbsolutePath, asNormalizedPath;
+import std.algorithm : filter, find, map;
 import std.array : array;
-import std.algorithm : map, filter, find;
+import std.array : appender, empty, front, popFront;
+import std.file : dirEntries, exists, SpanMode;
+import std.path : asAbsolutePath, asNormalizedPath;
+import std.range : chain;
+import std.stdio : File;
+import std.string : endsWith, format;
 import std.typecons : Tuple;
 import worker.common : Project;
-import std.file : dirEntries, SpanMode, exists;
-import std.string : endsWith, format;
-import std.stdio : File;
-import std.range : chain;
-import std.array : appender, empty, front, popFront;
 
 alias Work = Tuple!(string, "base", Project[], "projects");
 
