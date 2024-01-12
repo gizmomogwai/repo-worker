@@ -1,6 +1,6 @@
 module worker.arguments;
 
-import argparse : ArgumentGroup, Command, Config, Default, Description, Epilog, NamedArgument, SubCommand, ansiStylingArgument;
+import argparse : ArgumentGroup, Command, Config, Default, Description, Epilog, NamedArgument, SubCommand, ansiStylingArgument, match;
 import asciitable : AsciiTable;
 import colored : bold, white, lightGray;
 import core.runtime : Runtime;
@@ -40,7 +40,10 @@ struct Log
 
     @(NamedArgument("author")
             .Description("Filter by author (e.g. john.doe@foobar.com or foobar.com)"))
-    string author;
+    string authorFilter;
+
+    @(NamedArgument("project", "p").Description("Filter by project"))
+    string projectFilter;
 }
 
 static foreach (p; packages)

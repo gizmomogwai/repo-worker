@@ -14,8 +14,14 @@ import std.experimental.logger : trace, error, info;
 import profiled : theProfiler;
 import std.process;
 import std.parallelism : TaskPool;
-import std.algorithm : map, filter, sort, joiner;
+import std.algorithm : map, filter, sort, joiner, fold;
 import std.range : take, drop;
+import std.traits : ReturnType;
+import std.regex : matchAll;
+
+version (unittest) {
+    import unit_threaded : should;
+}
 
 // copied from phobos std.datetime.timezone.d as its package protected
 static immutable(SimpleTimeZone) simpleTimeZonefromISOString(S)(S isoString) @safe pure
@@ -190,17 +196,89 @@ unittest
     commits[6].message.should == "";
 }
 
-auto historyOfProject(Tuple!(Project, "project", Log, "log") projectAndParameters)
+enum FilterResult {
+    add,
+    remove,
+    dontCare,
+}
+bool update(bool old, FilterResult newResult)
+{
+    final switch (newResult) {
+    case FilterResult.add:
+        return true;
+    case FilterResult.remove:
+        return false;
+    case FilterResult.dontCare:
+        return old;
+    }
+}
+
+auto parseFilter(string s)
+{
+    if (s.length < 2) {
+        throw new Exception("Illegal filter expression: " ~ s);
+    }
+    auto negate = s[0] == '-';
+    return tuple!("negative", "regex")(negate, s[1..$]);
+}
+
+@("parseFilter") unittest
+{
+    "-test".parseFilter.should == tuple(true, "test");
+    "+test".parseFilter.should == tuple(false, "test");
+}
+
+class ProjectFilter {
+    ReturnType!(parseFilter) filter;
+    this(string s) {
+        this.filter = s.parseFilter;
+    }
+    auto run(ref Project project) {
+        if (project.relativePath.matchAll(filter.regex)) {
+            if (filter.negative) {
+                return FilterResult.remove;
+            } else {
+                return FilterResult.add;
+            }
+        }
+        return FilterResult.dontCare;
+    }
+}
+
+bool run(ProjectFilter[] filters, Project project) {
+    // dfmt off
+    return filters
+        .fold!((result, filter) => result.update(filter.run(project)))
+          (true);
+    // dfmt on
+}
+
+@("run(ProjectFilter[]") unittest {
+    Project p = Project("/base", "blub/Vehicle/blub");
+    auto filters = parseProjectFilters("-.*/Vehicle/.*");
+    filters.run(p).should == false;
+}
+
+ProjectFilter[] parseProjectFilters(string s) {
+    return s.split(",").map!(i => new ProjectFilter(i)).array;
+}
+GitCommit[] historyOfProject(Tuple!(Project, "project", Log, "log") projectAndParameters)
 {
     Project project = projectAndParameters.project;
+    if (!projectAndParameters.log.projectFilter.empty) {
+        auto filters = projectAndParameters.log.projectFilter.parseProjectFilters;
+        if (!filters.run(projectAndParameters.project)) {
+            return [];
+        }
+    }
     string gitDurationSpec = projectAndParameters.log.gitDurationSpec;
     auto trace = theProfiler.start("git log of project '%s'".format(project.relativePath));
     string[] args = [
         "log", "--pretty=raw", "--since=%s".format(gitDurationSpec),
     ];
-    if (!projectAndParameters.log.author.empty)
+    if (!projectAndParameters.log.authorFilter.empty)
     {
-        args ~= "--author=%s".format(projectAndParameters.log.author);
+        args ~= "--author=%s".format(projectAndParameters.log.authorFilter);
     }
     return project.git(args).message("Get logs")
         .run.map!(output => GitCommit.parseCommits(project, output)).front;
@@ -260,7 +338,8 @@ auto collectData(T)(T work, Log log)
     "History for %s projects".format(projects.length).info();
 
     // auto results = projects.map!(historyOfProject).joiner.array;
-    return taskPool.amap!(historyOfProject)(projects).filter!(commits => commits.length > 0)
+    return taskPool.amap!(historyOfProject)(projects)
+        .filter!(commits => commits.length > 0)
         .joiner
         .array
         .sort!((a, b) => a.committerDate > b.committerDate)
@@ -317,9 +396,9 @@ void historyTui(T, Results)(T work, Log log, Results results)
             list, scrolledDetails);
     string statusString = "Found %s commits in %s repositories matching criteria since='%s'".format(
             results.length, work.projects.length, log.gitDurationSpec);
-    if (!log.author.empty)
+    if (!log.authorFilter.empty)
     {
-        statusString ~= " and author='%s'".format(log.author);
+        statusString ~= " and author='%s'".format(log.authorFilter);
     }
     auto globalStatus = new Text(statusString);
     auto root = new HSplit(-1, listAndDetails, globalStatus);

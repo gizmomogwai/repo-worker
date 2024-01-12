@@ -6,8 +6,7 @@
 module worker;
 
 import androidlogger : AndroidLogger;
-import argparse.config : Config;
-import argparse.api.subcommand : match;
+import argparse : Config, match;
 import profiled : Profiler, theProfiler;
 import std.algorithm : sort, fold;
 import std.conv : to;
