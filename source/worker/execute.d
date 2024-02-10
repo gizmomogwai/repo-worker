@@ -4,7 +4,7 @@ import std.algorithm : map, sort;
 import std.datetime.stopwatch : AutoStart, StopWatch;
 import std.experimental.logger : error, info, warning;
 import std.path : asNormalizedPath;
-import std.process;
+import std.process : executeShell, Config;
 import std.string : format, join, strip;
 import unit : onlyRelevant, TIME;
 
@@ -15,7 +15,7 @@ void executeCommand(T)(T work, string command)
     {
         "Running %s in %s".format(command, project.absolutePath).info;
         auto sw = StopWatch(AutoStart.yes);
-        auto res = command.executeShell(null, std.process.Config.none, size_t.max, project.absolutePath);
+        auto res = command.executeShell(workDir : project.absolutePath);
         if (res.status != 0)
         {
             status = res.status;

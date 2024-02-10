@@ -27,9 +27,8 @@ int worker_(Arguments arguments)
     scope (exit)
         theProfiler.dumpJson("trace.json");
 
-    sharedLog = cast(shared)new AndroidLogger(stderr,
-                                              arguments.withColors ? true : false,
-                                              arguments.logLevel);
+    sharedLog = cast(shared) new AndroidLogger(stderr, arguments.withColors
+            ? true : false, arguments.logLevel);
 
     auto projects = arguments.traversalMode == TraversalMode.WALK ? findGitsByWalking(
             arguments.baseDirectory) : findGitsFromManifest(arguments.baseDirectory);

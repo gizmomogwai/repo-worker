@@ -59,7 +59,7 @@ struct Command
         {
             return no!string;
         }
-        auto res = execute(command_, null, Config.none, size_t.max, workdir_);
+        auto res = command_.execute(workDir : workdir_);
         if (res.status == 0)
         {
             return res.output.some;
@@ -86,7 +86,7 @@ struct Project
     this(string base, string s)
     {
         this.base = base.asAbsolutePath.asNormalizedPath.array;
-        if (s[0] == '/')
+        if (s.length > 0 && s[0] == '/')
         {
             this.path = s.asAbsolutePath.asNormalizedPath.array;
         }
@@ -112,7 +112,7 @@ struct Project
     string relativePath()
     {
         string result = path.asAbsolutePath.asNormalizedPath.array.replace(base, "");
-        if (result[0] == '/')
+        if (result.length > 0 && result[0] == '/')
         {
             result = result[1..$];
         }

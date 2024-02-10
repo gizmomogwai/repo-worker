@@ -1,6 +1,7 @@
 module worker.arguments;
 
-import argparse : ArgumentGroup, Command, Config, Default, Description, Epilog, NamedArgument, SubCommand, ansiStylingArgument, match;
+import argparse : ArgumentGroup, Command, Config, Default, Description, Epilog,
+    NamedArgument, SubCommand, ansiStylingArgument, match;
 import asciitable : AsciiTable;
 import colored : bold, white, lightGray;
 import core.runtime : Runtime;
@@ -40,10 +41,7 @@ struct Log
 
     @(NamedArgument("author")
             .Description("Filter by author (e.g. john.doe@foobar.com or foobar.com)"))
-    string authorFilter;
-
-    @(NamedArgument("project", "p").Description("Filter by project"))
-    string projectFilter;
+    string author;
 }
 
 static foreach (p; packages)
@@ -76,7 +74,7 @@ auto color(T)(string s, T color)
                             .headerSeparator(true)
                             .columnSeparator(true)
                         .to!string))
-// dfmt on
+  // dfmt on
 struct Arguments
 {
     @ArgumentGroup("Common arguments")

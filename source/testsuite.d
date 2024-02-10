@@ -1,3 +1,3 @@
 import unit_threaded;
 
-mixin runTestsMain!("worker.upload", "worker.traversal", "worker.history",);
+mixin runTestsMain!("worker.history", "worker.traversal", "worker.upload",);
