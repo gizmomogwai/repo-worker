@@ -213,6 +213,12 @@ struct State
 
 State state = {finished: false,};
 
+extern (C) void signal(int sig, void function(int));
+extern (C) void ctrlC(int s)
+{
+    state.finished = true;
+}
+
 class Details : Component
 {
     GitCommit commit;
@@ -291,27 +297,40 @@ void historyTui(T, Results)(T work, Log log, Results results)
     }
     list.setInputHandler((input) {
         auto commit = list.getSelection();
-        if (input.input == "1")
+        switch (input.input)
         {
-            auto command = [
-                "gitk", "--all", "--select-commit=%s".format(commit.sha)
-            ];
-            Command(command).workdir(commit.project.absolutePath).spawn.wait;
-            return true;
+        case "1":
+            {
+                auto command = [
+                    "gitk", "--all", "--select-commit=%s".format(commit.sha)
+                ];
+                Command(command).workdir(commit.project.absolutePath).spawn.wait;
+                return true;
+            }
+        case "2":
+            {
+                auto command = ["tig", commit.sha];
+                Command(command).workdir(commit.project.absolutePath).spawn.wait;
+                return true;
+            }
+        case "3":
+            {
+                auto command = [
+                    "magit", commit.project.absolutePath, commit.sha
+                ];
+                Command(command).spawn.wait;
+                return true;
+            }
+        case "q":
+            {
+                state.finished = true;
+                return true;
+            }
+        default:
+            {
+                return false;
+            }
         }
-        if (input.input == "2")
-        {
-            auto command = ["tig", commit.sha];
-            Command(command).workdir(commit.project.absolutePath).spawn.wait;
-            return true;
-        }
-        if (input.input == "3")
-        {
-            auto command = ["magit", commit.project.absolutePath, commit.sha];
-            Command(command).spawn.wait;
-            return true;
-        }
-        return false;
     });
     auto listAndDetails = new VSplit(132, // (+ 26 20 50 30 4 2)
             list, scrolledDetails);
@@ -336,6 +355,7 @@ void historyTui(T, Results)(T work, Log log, Results results)
     ui.push(root);
     ui.resize();
 
+    signal(2, &ctrlC);
     while (!state.finished)
     {
         ui.render();

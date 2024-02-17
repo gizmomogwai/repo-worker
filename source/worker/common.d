@@ -114,7 +114,7 @@ struct Project
         string result = path.asAbsolutePath.asNormalizedPath.array.replace(base, "");
         if (result.length > 0 && result[0] == '/')
         {
-            result = result[1..$];
+            result = result[1 .. $];
         }
         return result;
     }
