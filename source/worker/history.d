@@ -13,7 +13,7 @@ import std.process;
 import std.range : drop, take;
 import std.string : format, join, leftJustify, split, startsWith;
 import std.typecons : Tuple, tuple;
-import tui;
+import tui : Terminal, Ui, Component, Context, KeyInput, ScrollPane, List, VSplit, Text, HSplit;
 import worker.arguments : Log;
 import worker.common : Command, Project;
 
@@ -209,14 +209,16 @@ auto historyOfProject(Tuple!(Project, "project", Log, "log") projectAndParameter
 struct State
 {
     bool finished;
+    int ctrlCSignalFD;
 }
 
-State state = {finished: false,};
-
+State state = {finished: false, ctrlCSignalFD: 0,};
 extern (C) void signal(int sig, void function(int));
 extern (C) void ctrlC(int s)
 {
-    state.finished = true;
+    import core.sys.posix.unistd : write;
+    ulong n = 1;
+    write(state.ctrlCSignalFD, &n, n.sizeof);
 }
 
 class Details : Component
@@ -273,10 +275,12 @@ auto collectData(T)(T work, Log log)
         .array;
 }
 
+
 void historyTui(T, Results)(T work, Log log, Results results)
 {
     KeyInput keyInput;
     scope terminal = new Terminal();
+    state.ctrlCSignalFD = terminal.ctrlCSignalFD;
 
     auto details = new Details();
     auto scrolledDetails = new ScrollPane(details);
@@ -360,7 +364,9 @@ void historyTui(T, Results)(T work, Log log, Results results)
     {
         ui.render();
         auto input = terminal.getInput();
-
+        if (input.ctrlC == true) {
+            break;
+        }
         // import std.file : append;
         // "key.log".append("read input: %s\n".format(input));
         ui.handleInput(cast() input);
