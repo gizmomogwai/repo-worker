@@ -8,7 +8,7 @@ works your dirty [[https://code.google.com/p/git-repo/][repo]] git repositories 
 ** Implementation notes
 *** history
 - after the history is calculated, the program is a single threaded tui app
-
+- mainthread does the reading of input and then the rendering
 ** Todos
 *** DONE add base-directory parameter
 CLOSED: [2022-06-05 Sun 12:39]

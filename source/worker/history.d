@@ -209,17 +209,9 @@ auto historyOfProject(Tuple!(Project, "project", Log, "log") projectAndParameter
 struct State
 {
     bool finished;
-    int ctrlCSignalFD;
 }
 
-State state = {finished: false, ctrlCSignalFD: 0,};
-extern (C) void signal(int sig, void function(int));
-extern (C) void ctrlC(int s)
-{
-    import core.sys.posix.unistd : write;
-    ulong n = 1;
-    write(state.ctrlCSignalFD, &n, n.sizeof);
-}
+State state = {finished: false,};
 
 class Details : Component
 {
@@ -280,7 +272,6 @@ void historyTui(T, Results)(T work, Log log, Results results)
 {
     KeyInput keyInput;
     scope terminal = new Terminal();
-    state.ctrlCSignalFD = terminal.ctrlCSignalFD;
 
     auto details = new Details();
     auto scrolledDetails = new ScrollPane(details);
@@ -359,17 +350,16 @@ void historyTui(T, Results)(T work, Log log, Results results)
     ui.push(root);
     ui.resize();
 
-    signal(2, &ctrlC);
     while (!state.finished)
     {
         ui.render();
         auto input = terminal.getInput();
-        if (input.ctrlC == true) {
+        if (input.ctrlC) {
             break;
         }
-        // import std.file : append;
-        // "key.log".append("read input: %s\n".format(input));
-        ui.handleInput(cast() input);
+        if (!input.empty) {
+            ui.handleInput(cast() input);
+        }
     }
 }
 
