@@ -1,7 +1,7 @@
 module worker.arguments;
 
 import argparse : ArgumentGroup, Command, Config, Default, Description, Epilog,
-    NamedArgument, SubCommand, ansiStylingArgument, match;
+    NamedArgument, ansiStylingArgument, SubCommands;
 import asciitable : AsciiTable;
 import colored : bold, white, lightGray;
 import core.runtime : Runtime;
@@ -11,6 +11,7 @@ import std.conv : to;
 import std.experimental.logger : LogLevel;
 import worker.common : ChangeSetType;
 import worker.traversal : TraversalMode;
+import std.sumtype : SumType;
 
 // Commandline parsing
 @(Command("review", "r").Description("Show changes of all subprojects."))
@@ -95,5 +96,6 @@ struct Arguments
         @(NamedArgument("logLevel", "l").Description("Set logging level."))
         LogLevel logLevel;
     }
-    SubCommand!(Default!Review, Upload, Execute, Log) subcommand;
+    @SubCommands
+    SumType!(Default!Review, Upload, Execute, Log) subcommand;
 }

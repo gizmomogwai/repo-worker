@@ -6,7 +6,7 @@
 module worker;
 
 import androidlogger : AndroidLogger;
-import argparse : Config, match;
+import argparse : Config;
 import profiled : Profiler, theProfiler;
 import std.algorithm : sort, fold;
 import std.conv : to;
@@ -20,6 +20,7 @@ import worker.history;
 import worker.review;
 import worker.traversal;
 import worker.upload;
+import std.sumtype : match;
 
 int worker_(Arguments arguments)
 {
