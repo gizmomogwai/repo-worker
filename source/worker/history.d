@@ -84,7 +84,7 @@ class GitCommit
     }
 
     this(Project project, string sha, string author, SysTime authorDate,
-            string comitter, SysTime committerDate, string title, string message)
+            string committer, SysTime committerDate, string title, string message)
     {
         this.project = project;
         this.sha = sha;
@@ -267,7 +267,6 @@ auto collectData(T)(T work, Log log)
         .array;
 }
 
-
 void historyTui(T, Results)(T work, Log log, Results results)
 {
     KeyInput keyInput;
@@ -354,10 +353,12 @@ void historyTui(T, Results)(T work, Log log, Results results)
     {
         ui.render();
         auto input = terminal.getInput();
-        if (input.ctrlC) {
+        if (input.ctrlC)
+        {
             break;
         }
-        if (!input.empty) {
+        if (!input.empty)
+        {
             ui.handleInput(cast() input);
         }
     }

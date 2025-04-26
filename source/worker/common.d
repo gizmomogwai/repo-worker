@@ -59,7 +59,7 @@ struct Command
         {
             return no!string;
         }
-        auto res = command_.execute(workDir : workdir_);
+        auto res = command_.execute(workDir: workdir_);
         if (res.status == 0)
         {
             return res.output.some;

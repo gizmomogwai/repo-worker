@@ -15,7 +15,7 @@ void executeCommand(T)(T work, string command)
     {
         "Running %s in %s".format(command, project.absolutePath).info;
         auto sw = StopWatch(AutoStart.yes);
-        auto res = command.executeShell(workDir : project.absolutePath);
+        auto res = command.executeShell(workDir: project.absolutePath);
         if (res.status != 0)
         {
             status = res.status;

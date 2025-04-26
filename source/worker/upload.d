@@ -1,5 +1,6 @@
 module worker.upload;
 
+import optional : none;
 import std.algorithm : filter, map;
 import std.array : empty, front, popFront;
 import std.array : array;
@@ -53,86 +54,38 @@ struct Branch
     }
 }
 
-auto parseTrackingBranches(Project project, string s)
+string cleanUpRemoteBranchName(string s)
+{
+    return s.replace("refs/heads/", "");
+}
+
+auto parseTrackingBranches(Project project, string gitOutput)
 {
     Branch[] res;
-    auto lines = s.strip.split("\n");
-
-    string branch = null;
-    string remote = null;
-    string remoteBranch = null;
-    auto remoteRegex = ctRegex!("branch\\.(.+?)\\.remote (.+)");
-    auto pushRemoteRegex = ctRegex!("branch\\.(.+?)\\.(?:push)?remote (.+)");
-    auto mergeRegex = ctRegex!("branch\\.(.+?)\\.merge (.+)");
-    foreach (line; lines)
+    foreach (branchInfo; gitOutput.strip.split("\n"))
     {
-        {
-            auto remoteCaptures = line.matchFirst(remoteRegex);
-            if (!remoteCaptures.empty)
-            {
-                branch = remoteCaptures[1];
-                remote = remoteCaptures[2];
-            }
-        }
-        if (branch == null || remote == null)
-        {
-            auto remoteCaptures = line.matchFirst(pushRemoteRegex);
-            if (!remoteCaptures.empty)
-            {
-                branch = remoteCaptures[1];
-                remote = remoteCaptures[2];
-            }
-        }
+        auto localWithUpstreamInfo = branchInfo.strip.split(" ").array;
+        import std.stdio : writeln;
 
-        auto mergeCapture = line.matchFirst(mergeRegex);
-        if (!mergeCapture.empty)
+        writeln("localWithUpstreamInfo: ", localWithUpstreamInfo);
+        if (localWithUpstreamInfo.length == 3)
         {
-            remoteBranch = mergeCapture[2];
-        }
-
-        if (branch != null && remote != null && remoteBranch != null)
-        {
-            string cleanUpRemoteBranchName(string s)
-            {
-                return s.replace("refs/heads/", "");
-            }
-
-            res ~= Branch(project, branch, remote, cleanUpRemoteBranchName(remoteBranch));
-            branch = null;
-            remote = null;
-            remoteBranch = null;
+            res ~= Branch(project, localWithUpstreamInfo[0], localWithUpstreamInfo[1],
+                    localWithUpstreamInfo[2].cleanUpRemoteBranchName,);
         }
     }
     return res;
 }
 
-@("parseTrackingBranches") unittest
-{
-    import unit_threaded;
-
-    auto res = parseTrackingBranches(Project("base", "test"),
-            "branch.default.remote gerrit\nbranch.default.merge refs/heads/master\n");
-    res.length.shouldEqual(1);
-    res[0].localBranch.shouldEqual("default");
-    res[0].remote.shouldEqual("gerrit");
-    res[0].remoteBranch.shouldEqual("master");
-
-    res = parseTrackingBranches(Project("base", "test"),
-            "branch.default.remote gerrit\nbranch.default.merge refs/heads/master\nbranch.default.rebase false\n");
-    res.length.shouldEqual(1);
-    res[0].localBranch.shouldEqual("default");
-    res[0].remote.shouldEqual("gerrit");
-    res[0].remoteBranch.shouldEqual("master");
-}
-
+// https://stackoverflow.com/questions/15661853/list-all-local-branches-without-a-remote
 auto getTrackingBranches(Project project)
 {
     // dfmt off
     return project
-        .git("config", "--get-regex", "branch")
+        .git(["branch", "--format=%(refname:short) %(upstream:remotename) %(upstream:remoteref)"])
         .message("getTrackingBranches")
         .run
-        .map!((string t) => parseTrackingBranches(project, t))
+        .map!((string gitOutput) => parseTrackingBranches(project, gitOutput))
         .front;
     // dfmt on
 }

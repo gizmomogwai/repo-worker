@@ -1,26 +1,27 @@
 module worker.arguments;
 
 import argparse : ArgumentGroup, Command, Config, Default, Description, Epilog,
-    NamedArgument, ansiStylingArgument, SubCommands;
+    NamedArgument, ansiStylingArgument, SubCommand;
 import asciitable : AsciiTable;
-import colored : bold, white, lightGray;
+import colored : bold, lightGray, white;
 import core.runtime : Runtime;
 import packageinfo : packages;
-import std.algorithm : sort, fold;
+import std.algorithm : fold, sort;
 import std.conv : to;
 import std.experimental.logger : LogLevel;
+import std.sumtype : SumType;
 import worker.common : ChangeSetType;
 import worker.traversal : TraversalMode;
-import std.sumtype : SumType;
 
 // Commandline parsing
-@(Command("review", "r").Description("Show changes of all subprojects."))
+@(Command("review", "r").Description("Show changes of all subprojects"))
 struct Review
 {
-    @NamedArgument string command = "magit %s";
+    @(NamedArgument.Description("Command to run in dirty git repositories"))
+    string command = "magit %s";
 }
 
-@(Command("upload", "u").Description("Upload changes to review."))
+@(Command("upload", "u").Description("Upload changes to review"))
 struct Upload
 {
     @NamedArgument string topic;
@@ -28,7 +29,7 @@ struct Upload
     @NamedArgument ChangeSetType changeSetType = ChangeSetType.NORMAL;
 }
 
-@(Command("execute", "run", "e").Description("Run a command on all subprojects."))
+@(Command("execute", "run", "e").Description("Run a command on all subprojects"))
 struct Execute
 {
     @NamedArgument string command = "git status";
@@ -75,27 +76,26 @@ auto color(T)(string s, T color)
                             .headerSeparator(true)
                             .columnSeparator(true)
                         .to!string))
-// dfmt on
+  // dfmt on
 struct Arguments
 {
     @ArgumentGroup("Common arguments")
     {
-        @(NamedArgument.Description("Simulate commands."))
+        @(NamedArgument.Description("Simulate commands"))
         bool dryRun = false;
 
-        @(NamedArgument.Description("Use ANSI colors in output."))
+        @(NamedArgument.Description("Use ANSI colors in output"))
         static auto withColors = ansiStylingArgument;
 
         @(NamedArgument("traversalMode", "mode")
-                .Description("Find subprojects with repo or filesystem."))
+                .Description("Find subprojects with repo, filesystem walk or just here"))
         TraversalMode traversalMode = TraversalMode.REPO;
 
-        @(NamedArgument("baseDirectory", "base", "dir").Description("Basedirectory."))
+        @(NamedArgument("baseDirectory", "base", "dir").Description("Basedirectory"))
         string baseDirectory = ".";
 
-        @(NamedArgument("logLevel", "l").Description("Set logging level."))
+        @(NamedArgument("logLevel", "l").Description("Set logging level"))
         LogLevel logLevel;
     }
-    @SubCommands
-    SumType!(Default!Review, Upload, Execute, Log) subcommand;
+    SubCommand!(Default!Review, Upload, Execute, Log) subcommand;
 }

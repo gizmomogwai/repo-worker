@@ -5,10 +5,6 @@
  +/
 module worker;
 
-import androidlogger : AndroidLogger;
-import argparse : Config;
-import profiled : Profiler, theProfiler;
-import std.algorithm : sort, fold;
 import std.conv : to;
 import std.experimental.logger : LogLevel;
 import std.experimental.logger.core : sharedLog;
@@ -20,19 +16,23 @@ import worker.history;
 import worker.review;
 import worker.traversal;
 import worker.upload;
-import std.sumtype : match;
 
 int worker_(Arguments arguments)
 {
+    import profiled : Profiler, theProfiler;
+
     theProfiler = new Profiler;
     scope (exit)
         theProfiler.dumpJson("trace.json");
 
+    import androidlogger : AndroidLogger;
+
     sharedLog = cast(shared) new AndroidLogger(stderr, arguments.withColors
             ? true : false, arguments.logLevel);
 
-    auto projects = arguments.traversalMode == TraversalMode.WALK ? findGitsByWalking(
-            arguments.baseDirectory) : findGitsFromManifest(arguments.baseDirectory);
+    auto projects = arguments.traversalMode.findGits(arguments.baseDirectory);
+
+    import argparse : match;
 
     // dfmt off
     arguments.subcommand.match!(

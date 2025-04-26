@@ -17,9 +17,34 @@ enum TraversalMode
 {
     REPO,
     WALK,
+    HERE,
 }
 
-auto findGitsByWalking(string baseDirectory)
+auto findGits(TraversalMode mode, string baseDirectory)
+{
+    final switch (mode)
+    {
+    case TraversalMode.REPO:
+        return findProjectsFromManifest(baseDirectory);
+    case TraversalMode.WALK:
+        return findProjectsByWalking(baseDirectory);
+    case TraversalMode.HERE:
+        return findProjectByDominatingGit(baseDirectory);
+    }
+}
+
+auto findProjectByDominatingGit(string baseDirectory)
+{
+    auto all = baseDirectory.getRulingDirectories;
+    auto candidates = all.find!((string a, string b) => exists("%s/%s".format(a, b)))(".git");
+    if (candidates.empty)
+    {
+        throw new Exception("cannot find .git repository");
+    }
+    return Work(baseDirectory, [Project(candidates.front, ".")]);
+}
+
+auto findProjectsByWalking(string baseDirectory)
 {
     string base = baseDirectory.asAbsolutePath.asNormalizedPath.array;
     return Work(base, dirEntries(base, ".git", SpanMode.depth)
@@ -28,7 +53,7 @@ auto findGitsByWalking(string baseDirectory)
             .array);
 }
 
-auto findGitsFromManifest(string baseDirectory)
+auto findProjectsFromManifest(string baseDirectory)
 {
     auto manifestDir = findProjectList(baseDirectory);
     if (manifestDir == null)
