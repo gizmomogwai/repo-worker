@@ -41,7 +41,7 @@ auto findProjectByDominatingGit(string baseDirectory)
     {
         throw new Exception("cannot find .git repository");
     }
-    return Work(baseDirectory, [Project(candidates.front, ".")]);
+    return Work(candidates.front, [Project(candidates.front, ".")]);
 }
 
 auto findProjectsByWalking(string baseDirectory)
