@@ -27,6 +27,7 @@ struct Upload
     @NamedArgument string topic;
     @NamedArgument string hashtag;
     @NamedArgument ChangeSetType changeSetType = ChangeSetType.NORMAL;
+    @NamedArgument bool skipReview = false;
 }
 
 @(Command("execute", "run", "e").Description("Run a command on all subprojects"))
@@ -44,11 +45,6 @@ struct Log
     @(NamedArgument("author")
             .Description("Filter by author (e.g. john.doe@foobar.com or foobar.com)"))
     string author;
-}
-
-static foreach (p; packages)
-{
-    pragma(msg, p);
 }
 
 auto color(T)(string s, T color)

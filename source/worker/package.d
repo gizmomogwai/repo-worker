@@ -42,7 +42,7 @@ int worker_(Arguments arguments)
         },
         (Upload u)
         {
-            projects.upload(arguments.dryRun, u.topic, u.hashtag, u.changeSetType);
+            projects.upload(arguments.dryRun, u.topic, u.hashtag, u.changeSetType, u.skipReview);
         },
         (Execute e)
         {
