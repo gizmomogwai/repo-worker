@@ -32,10 +32,10 @@ int worker_(Arguments arguments)
 
     auto projects = arguments.traversalMode.findGits(arguments.baseDirectory);
 
-    import argparse : match;
+    import argparse : matchCmd;
 
     // dfmt off
-    arguments.subcommand.match!(
+    arguments.subcommand.matchCmd!(
         (Review r)
         {
             projects.reviewChanges(r.command);

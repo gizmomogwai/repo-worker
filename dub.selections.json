@@ -2,7 +2,7 @@
 	"fileVersion": 1,
 	"versions": {
 		"androidlogger": "0.0.21",
-		"argparse": "2.0.0-rc2",
+		"argparse": "2.0.2",
 		"asciitable": "0.0.17",
 		"bolts": "1.3.1",
 		"colored": "0.0.34",
