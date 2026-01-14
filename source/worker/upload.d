@@ -48,9 +48,9 @@ struct Branch
 
     auto getUploadInfo()
     {
-        return project.git("log", "--pretty=oneline", "--abbrev-commit",
-                "%s...%s/%s".format(localBranch, remote, remoteBranch)).message(
-                "GetUploadInfo").run.map!(o => UploadInfo(this, o));
+        return project.git("log", "--pretty=oneline", "--abbrev-commit", "%s/%s..%s".format(remote,
+                remoteBranch, localBranch)).message("GetUploadInfo")
+            .run.map!(o => UploadInfo(this, o));
     }
 }
 
@@ -173,17 +173,17 @@ auto asGerritRequest(ChangeSetType changeSetType)
     }
 }
 
-void doUploads(T)(T uploads, bool dry, string topic, string hashtag, ChangeSetType changeSetType, bool skipReview)
+void doUploads(T)(T uploads, bool dry, string topic, string hashtag,
+        ChangeSetType changeSetType, bool skipReview)
 {
     foreach (upload; uploads)
     {
         info(upload);
         auto args = [
             "push", upload.branch.remote,
-            "%s:refs/%s/%s%s".format(upload.commits[0].sha1,
-                                     skipReview ? "heads" :
-                                     changeSetType == ChangeSetType.DRAFT
-                                     ? "drafts" : "for", upload.branch.remoteBranch, changeSetType.asGerritRequest)
+            "%s:refs/%s/%s%s".format(upload.commits[0].sha1, skipReview
+                    ? "heads" : changeSetType == ChangeSetType.DRAFT ? "drafts" : "for",
+                    upload.branch.remoteBranch, changeSetType.asGerritRequest)
         ];
         if (topic != null)
         {
@@ -271,7 +271,8 @@ string calcUploadText(UploadInfo[Branch] uploadInfos)
     uploadInfos.calcUploadText.should == expected;
 }
 
-void upload(T)(T work, bool dry, string topic, string hashtag, ChangeSetType changeSetType, bool skipReview)
+void upload(T)(T work, bool dry, string topic, string hashtag,
+        ChangeSetType changeSetType, bool skipReview)
 {
     auto summary = work.projects
         .map!(i => uploadForRepo(i))
@@ -287,7 +288,8 @@ void upload(T)(T work, bool dry, string topic, string hashtag, ChangeSetType cha
     auto hashtagMessage = hashtag == null ? "" : "\n# Hashtag: %s".format(hashtag);
     auto skipReviewMessage = skipReview ? "\n# Skip review" : "\n# Do review";
     auto sep = "# ================================================================================";
-    summary = i"# Workspace: $(work.base)$(topicMessage)$(hashtagMessage)$(skipReviewMessage)\n# ChangeSetType: $(changeSetType.to!string)\n$(sep)\n".text ~ summary;
+    summary = i"# Workspace: $(work.base)$(topicMessage)$(hashtagMessage)$(skipReviewMessage)\n# ChangeSetType: $(
+            changeSetType.to!string)\n$(sep)\n".text ~ summary;
     auto fileName = "/tmp/worker_upload.txt";
     auto file = File(fileName, "w");
     file.write(summary);
