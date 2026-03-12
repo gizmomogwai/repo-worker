@@ -10,7 +10,7 @@ import std.datetime : Clock, SimpleTimeZone, SysTime, unixTimeToStdTime;
 import std.experimental.logger : error, info, trace;
 import std.parallelism : TaskPool;
 import std.process;
-import std.range : drop, take;
+import std.range : drop;
 import std.string : format, join, leftJustify, split, startsWith;
 import std.typecons : Tuple, tuple;
 import tui : Terminal, Ui, Component, Context, KeyInput, ScrollPane, List, VSplit, Text, HSplit;
