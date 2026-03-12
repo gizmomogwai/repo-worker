@@ -4,7 +4,7 @@ import colored;
 import core.time : dur;
 import profiled : theProfiler;
 import std.algorithm : filter, joiner, map, sort;
-import std.array : appender, array, empty, front, popFront;
+import std.array : appender, array, empty, front, popFront, replicate;
 import std.conv : to;
 import std.datetime : SimpleTimeZone, SysTime, unixTimeToStdTime;
 import std.experimental.logger : error, info, trace;
@@ -204,6 +204,38 @@ struct State
 
 State state = {finished: false,};
 
+class StatusBar : Component
+{
+    string statusText;
+    string helpText;
+
+    this(string statusText, string helpText)
+    {
+        this.statusText = statusText;
+        this.helpText = helpText;
+    }
+
+    override void render(Context context)
+    {
+        string line;
+        if (context.width >= statusText.length + helpText.length + 1)
+        {
+            auto padding = context.width - statusText.length - helpText.length;
+            line = (statusText ~ " ".replicate(padding) ~ helpText);
+        }
+        else
+        {
+            line = statusText.fitTo(context.width);
+        }
+        context.putString(0, 0, line.white.onBlue.to!string);
+    }
+
+    override bool handlesInput()
+    {
+        return false;
+    }
+}
+
 class Details : Component
 {
     GitCommit commit;
@@ -325,7 +357,7 @@ void historyTui(T, Results)(T work, Log log, Results results)
     {
         statusString ~= " and author='%s'".format(log.author);
     }
-    auto globalStatus = new Text(statusString);
+    auto globalStatus = new StatusBar(statusString, "1:gitk  2:tig  3:magit  q:quit  ESC:exit");
     auto root = new HSplit(-1, listAndDetails, globalStatus);
     root.setInputHandler((input) {
         if (input.input == "\x1B")
