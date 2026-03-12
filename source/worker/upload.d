@@ -2,8 +2,7 @@ module worker.upload;
 
 import optional : none;
 import std.algorithm : filter, map;
-import std.array : empty, front, popFront;
-import std.array : array;
+import std.array : appender, array, empty, front, popFront;
 import std.conv : to, text;
 import std.experimental.logger : info;
 import std.file;
@@ -61,7 +60,7 @@ string cleanUpRemoteBranchName(string s)
 
 auto parseTrackingBranches(Project project, string gitOutput)
 {
-    Branch[] res;
+    auto res = appender!(Branch[]);
     foreach (branchInfo; gitOutput.strip.split("\n"))
     {
         auto localWithUpstreamInfo = branchInfo.strip.split(" ").array;
@@ -74,7 +73,7 @@ auto parseTrackingBranches(Project project, string gitOutput)
                     localWithUpstreamInfo[2].cleanUpRemoteBranchName,);
         }
     }
-    return res;
+    return res.data;
 }
 
 // https://stackoverflow.com/questions/15661853/list-all-local-branches-without-a-remote
@@ -96,7 +95,7 @@ auto parseUpload(string base, string edit)
     auto branchRegex = ctRegex!(".*?BRANCH (.+?) -> (.+?)/(.+)");
     auto commitRegex = ctRegex!(".*?(.*?) - (.*)");
 
-    UploadInfo[] res;
+    auto res = appender!(UploadInfo[]);
     string path;
 
     Branch branch;
@@ -137,7 +136,7 @@ auto parseUpload(string base, string edit)
             }
         }
     }
-    return res;
+    return res.data;
 }
 
 @("parseUpload") unittest
@@ -227,13 +226,13 @@ auto uploadForRepo(Project project)
 string calcUploadText(UploadInfo[Branch] uploadInfos)
 {
     bool firstCommitForProject = true;
-    string[] projects;
+    auto projects = appender!(string[]);
     foreach (b; uploadInfos.byKeyValue())
     {
         auto branch = b.key;
         auto uploadInfo = b.value;
         bool firstCommitForBranch = true;
-        string project = "";
+        auto project = appender!string;
         foreach (commit; uploadInfo.commits)
         {
             if (firstCommitForProject)
@@ -251,10 +250,10 @@ string calcUploadText(UploadInfo[Branch] uploadInfos)
         }
         if (uploadInfo.commits.length > 0)
         {
-            projects ~= project;
+            projects ~= project.data;
         }
     }
-    return projects.join("");
+    return projects.data.join("");
 }
 
 @("calc upload text") unittest

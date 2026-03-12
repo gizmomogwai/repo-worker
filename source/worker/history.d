@@ -4,7 +4,7 @@ import colored;
 import core.time : dur;
 import profiled : theProfiler;
 import std.algorithm : filter, joiner, map, sort;
-import std.array : array, empty, front, popFront;
+import std.array : appender, array, empty, front, popFront;
 import std.conv : to;
 import std.datetime : SimpleTimeZone, SysTime, unixTimeToStdTime;
 import std.experimental.logger : error, info, trace;
@@ -98,7 +98,7 @@ class GitCommit
 
     static auto parseCommits(Project project, string rawCommits)
     {
-        GitCommit[] result = [];
+        auto result = appender!(GitCommit[]);
         auto lines = rawCommits.split("\n");
         GitCommit current = null;
         while (!lines.empty)
@@ -156,7 +156,7 @@ class GitCommit
         {
             result ~= current;
         }
-        return result;
+        return result.data;
     }
 
     override string toString()
