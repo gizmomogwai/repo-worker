@@ -91,6 +91,63 @@ string relativeTime(SysTime time)
     return "%sy ago".format(days / 365);
 }
 
+string fitTo(string s, size_t width)
+{
+    if (s.length <= width) {
+        return s.leftJustify(width).take(width).to!string;
+    }
+    if (width <= 3) {
+        return "..."[0 .. width];
+    }
+    // width > 3
+    return s[0 .. width - 3] ~ "...";
+}
+
+string dateGroup(SysTime commitDate)
+{
+    auto diff = Clock.currTime() - commitDate;
+    long days = diff.total!"days";
+    if (days < 1)
+        return "Today";
+    if (days < 2)
+        return "Yesterday";
+    if (days < 7)
+        return "This week";
+    if (days < 14)
+        return "Last week";
+    if (days < 30)
+        return "This month";
+    return "Older";
+}
+
+struct ListItem
+{
+    GitCommit commit;
+    string separator;
+
+    bool isSeparator() const
+    {
+        return commit is null;
+    }
+}
+
+ListItem[] withSeparators(GitCommit[] commits)
+{
+    auto result = appender!(ListItem[]);
+    string lastGroup;
+    foreach (c; commits)
+    {
+        auto group = dateGroup(c.committerDate);
+        if (group != lastGroup)
+        {
+            result ~= ListItem(null, group);
+            lastGroup = group;
+        }
+        result ~= ListItem(c, "");
+    }
+    return result.data;
+}
+
 class GitCommit
 {
     Project project;
@@ -263,9 +320,9 @@ class StatusBar : Component
 class Details : Component
 {
     GitCommit commit;
-    void newSelection(GitCommit commit)
+    void newSelection(ListItem item)
     {
-        this.commit = commit;
+        this.commit = item.isSeparator ? null : item.commit;
     }
 
     override void render(Context context)
@@ -322,22 +379,32 @@ void historyTui(T, Results)(T work, Log log, Results results)
     auto details = new Details();
     auto scrolledDetails = new ScrollPane(details);
     // dfmt off
+    auto items = results.withSeparators;
     auto list = new List!(
-        GitCommit,
-        gitCommit => "%s %s %s %s".format(
-            gitCommit.committerDate.relativeTime.leftJustify(26).take(26).to!string.yellow,
-            gitCommit.project.relativePath.leftJustify(20).take(20).to!string.red,
-            gitCommit.author.leftJustify(50).take(50).to!string.green,
-            gitCommit.title.leftJustify(30).take(30).to!string,
-      ))(results);
+        ListItem,
+        (ListItem item, size_t width) {
+            if (item.isSeparator) {
+                return ("-- " ~ item.separator ~ " ").leftJustify(width, '-').cyan.to!string;
+            }
+            auto c = item.commit;
+            return "%s %s %s %s".format(
+                c.committerDate.relativeTime.fitTo(8).yellow,
+                c.project.relativePath.fitTo(20).red,
+                c.author.fitTo(50).green,
+                c.title.fitTo(30),
+            );
+        })(items);
     // dfmt on
     list.selectionChanged.connect(&details.newSelection);
-    if (!results.empty)
+    if (!items.empty)
     {
         list.select();
     }
     list.setInputHandler((input) {
-        auto commit = list.getSelection();
+        auto item = list.getSelection();
+        if (item.isSeparator)
+            return false;
+        auto commit = item.commit;
         switch (input.input)
         {
         case "1":
@@ -373,7 +440,7 @@ void historyTui(T, Results)(T work, Log log, Results results)
             }
         }
     });
-    auto listAndDetails = new VSplit(132, // (+ 26 20 50 30 4 2)
+    auto listAndDetails = new VSplit(113, // (+ 8 20 50 30 3 2) // age, repo, author, title, space between colums, list cursor
             list, scrolledDetails);
     string statusString = "Found %s commits in %s repositories matching criteria since='%s'".format(
             results.length, work.projects.length, log.gitDurationSpec);
