@@ -6,7 +6,7 @@ import profiled : theProfiler;
 import std.algorithm : filter, joiner, map, sort;
 import std.array : appender, array, empty, front, popFront, replicate;
 import std.conv : to;
-import std.datetime : SimpleTimeZone, SysTime, unixTimeToStdTime;
+import std.datetime : Clock, SimpleTimeZone, SysTime, unixTimeToStdTime;
 import std.experimental.logger : error, info, trace;
 import std.parallelism : TaskPool;
 import std.process;
@@ -65,6 +65,30 @@ auto parseGitDateTime(string[] epochAndZone)
 {
     auto tz = epochAndZone[1].simpleTimeZonefromISOString;
     return SysTime(unixTimeToStdTime(epochAndZone[0].to!long), tz);
+}
+
+string relativeTime(SysTime time)
+{
+    auto diff = Clock.currTime() - time;
+    long minutes = diff.total!"minutes";
+    if (minutes < 1) {
+        return "just now";
+    }
+    if (minutes < 60) {
+        return "%sm ago".format(minutes);
+    }
+    long hours = diff.total!"hours";
+    if (hours < 24) {
+        return "%sh ago".format(hours);
+    }
+    long days = diff.total!"days";
+    if (days < 30) {
+        return "%sd ago".format(days);
+    }
+    if (days < 365) {
+        return "%smo ago".format(days / 30);
+    }
+    return "%sy ago".format(days / 365);
 }
 
 class GitCommit
@@ -301,7 +325,7 @@ void historyTui(T, Results)(T work, Log log, Results results)
     auto list = new List!(
         GitCommit,
         gitCommit => "%s %s %s %s".format(
-            gitCommit.committerDate.to!string.leftJustify(26).take(26).to!string.yellow,
+            gitCommit.committerDate.relativeTime.leftJustify(26).take(26).to!string.yellow,
             gitCommit.project.relativePath.leftJustify(20).take(20).to!string.red,
             gitCommit.author.leftJustify(50).take(50).to!string.green,
             gitCommit.title.leftJustify(30).take(30).to!string,
