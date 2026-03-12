@@ -112,28 +112,19 @@ class GitCommit
                 }
                 current = new GitCommit(project, line.split[1]);
             }
-            if (line.startsWith("parent "))
-            {
-                // ignore
-            }
-            if (line.startsWith("tree "))
-            {
-                // ignore
-            }
-            if (line.startsWith("author "))
+            else if (line.startsWith("author "))
             {
                 auto components = line.split(" ").array;
                 current.author = components[1 .. $ - 2].join(" ");
                 current.authorDate = components[$ - 2 .. $].parseGitDateTime;
             }
-            if (line.startsWith("committer "))
+            else if (line.startsWith("committer "))
             {
                 auto components = line.split(" ").array;
                 current.committer = components[1 .. $ - 2].join(" ");
                 current.committerDate = components[$ - 2 .. $].parseGitDateTime;
             }
-
-            if (line.startsWith("gpgsig "))
+            else if (line.startsWith("gpgsig "))
             {
                 // skip till next
                 while (!lines.front.empty)
@@ -141,7 +132,7 @@ class GitCommit
                     lines.popFront;
                 }
             }
-            if (line.startsWith("    "))
+            else if (line.startsWith("    "))
             {
                 if (current.title == null)
                 {
