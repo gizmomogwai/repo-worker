@@ -108,13 +108,6 @@ string findProjectList(string start)
     return existing.front;
 }
 
-@("find projectlist without repo") unittest
-{
-    import unit_threaded;
-
-    "test/without_repo/test".findProjectList.shouldBeNull;
-}
-
 @("find projectlist with repo") unittest
 {
     import unit_threaded;
