@@ -13,7 +13,8 @@ import std.process;
 import std.range : drop, take;
 import std.string : format, join, leftJustify, split, startsWith;
 import std.typecons : Tuple, tuple;
-import tui : Terminal, Ui, Component, Context, KeyInput, ScrollPane, List, VSplit, Text, HSplit;
+import tui : Terminal, Ui, Component, Context, KeyInput, Key, Modifier, EventType;
+import tui.components : ScrollPane, List, VSplit, Text, HSplit;
 import worker.arguments : Log;
 import worker.common : Command, Project;
 
@@ -69,23 +70,28 @@ auto parseGitDateTime(string[] epochAndZone)
 
 string relativeTime(SysTime time)
 {
-    auto diff = Clock.currTime() - time;
+    immutable diff = Clock.currTime() - time;
     long minutes = diff.total!"minutes";
-    if (minutes < 1) {
+    if (minutes < 1)
+    {
         return "just now";
     }
-    if (minutes < 60) {
+    if (minutes < 60)
+    {
         return "%sm ago".format(minutes);
     }
     long hours = diff.total!"hours";
-    if (hours < 24) {
+    if (hours < 24)
+    {
         return "%sh ago".format(hours);
     }
     long days = diff.total!"days";
-    if (days < 30) {
+    if (days < 30)
+    {
         return "%sd ago".format(days);
     }
-    if (days < 365) {
+    if (days < 365)
+    {
         return "%smo ago".format(days / 30);
     }
     return "%sy ago".format(days / 365);
@@ -93,10 +99,12 @@ string relativeTime(SysTime time)
 
 string fitTo(string s, size_t width)
 {
-    if (s.length <= width) {
+    if (s.length <= width)
+    {
         return s.leftJustify(width).take(width).to!string;
     }
-    if (width <= 3) {
+    if (width <= 3)
+    {
         return "..."[0 .. width];
     }
     // width > 3
@@ -105,8 +113,8 @@ string fitTo(string s, size_t width)
 
 string dateGroup(SysTime commitDate)
 {
-    auto diff = Clock.currTime() - commitDate;
-    long days = diff.total!"days";
+    immutable diff = Clock.currTime() - commitDate;
+    immutable days = diff.total!"days";
     if (days < 1)
         return "Today";
     if (days < 2)
@@ -182,9 +190,9 @@ class GitCommit
         auto result = appender!(GitCommit[]);
         auto lines = rawCommits.split("\n");
         GitCommit current = null;
-        while (!lines.empty)
+        while (!lines.empty())
         {
-            auto line = lines.front;
+            auto line = lines.front();
             if (line.startsWith("commit "))
             {
                 if (current !is null)
@@ -208,9 +216,9 @@ class GitCommit
             else if (line.startsWith("gpgsig "))
             {
                 // skip till next
-                while (!lines.front.empty)
+                while (!lines.front().empty)
                 {
-                    lines.popFront;
+                    lines.popFront();
                 }
             }
             else if (line.startsWith("    "))
@@ -231,7 +239,7 @@ class GitCommit
                     }
                 }
             }
-            lines.popFront;
+            lines.popFront();
         }
         if (current !is null)
         {
@@ -240,10 +248,32 @@ class GitCommit
         return result.data;
     }
 
-    override string toString()
+    override string toString() const
     {
-        return "GitCommit(project: %s, sha: %s, committer: %s, committerDate: %s, author: %s, authorDate: %s, title: %s, message: %s)"
-            .format(project, sha, committer, committerDate, author, authorDate, title, message);
+        string result = "GitCommit(";
+        bool first = true;
+        void append(string title, string value)
+        {
+            if (first)
+            {
+                first = false;
+                result = format!("%s, %s: %s")(result, title, value);
+            }
+            else
+            {
+                result = format!("%s%s: %s")(result, title, value);
+            }
+        }
+
+        append("project", project.to!string);
+        append("sha", sha);
+        append("committer", committer);
+        append("committerDate", committerDate.to!string);
+        append("author", author);
+        append("authorDate", authorDate.to!string);
+        append("title", title);
+        append("message", message);
+        return result;
     }
 }
 
@@ -266,7 +296,7 @@ auto historyOfProject(Tuple!(Project, "project", Log, "log") projectAndParameter
 {
     Project project = projectAndParameters.project;
     string gitDurationSpec = projectAndParameters.log.gitDurationSpec;
-    auto trace = theProfiler.start("git log of project '%s'".format(project.relativePath));
+    const _ = theProfiler.start("git log of project '%s'".format(project.relativePath));
     string[] args = [
         "log", "--pretty=raw", "--since=%s".format(gitDurationSpec),
     ];
@@ -354,7 +384,7 @@ class Details : Component
 
 auto collectData(T)(T work, Log log)
 {
-    auto process = theProfiler.start("Collecting history of gits");
+    const _ = theProfiler.start("Collecting history of gits");
     auto taskPool = new TaskPool();
     scope (exit)
     {
@@ -373,7 +403,6 @@ auto collectData(T)(T work, Log log)
 
 void historyTui(T, Results)(T work, Log log, Results results)
 {
-    KeyInput keyInput;
     scope terminal = new Terminal();
 
     auto details = new Details();
@@ -403,42 +432,48 @@ void historyTui(T, Results)(T work, Log log, Results results)
     list.setInputHandler((input) {
         auto item = list.getSelection();
         if (item.isSeparator)
-            return false;
-        auto commit = item.commit;
-        switch (input.input)
         {
-        case "1":
+            return false;
+        }
+        auto commit = item.commit;
+        if ((input.key == Key.normal) && (input.eventType == EventType.release))
+        {
+            switch (input.c)
             {
-                auto command = [
-                    "gitk", "--all", "--select-commit=%s".format(commit.sha)
-                ];
-                Command(command).workdir(commit.project.absolutePath).spawn.wait;
-                return true;
-            }
-        case "2":
-            {
-                auto command = ["tig", commit.sha];
-                Command(command).workdir(commit.project.absolutePath).spawn.wait;
-                return true;
-            }
-        case "3":
-            {
-                auto command = [
-                    "magit", commit.project.absolutePath, commit.sha
-                ];
-                Command(command).spawn.wait;
-                return true;
-            }
-        case "q":
-            {
-                state.finished = true;
-                return true;
-            }
-        default:
-            {
-                return false;
+            case '1':
+                {
+                    auto command = [
+                        "gitk", "--all", "--select-commit=%s".format(commit.sha)
+                    ];
+                    Command(command).workdir(commit.project.absolutePath).spawn.wait;
+                    return true;
+                }
+            case '2':
+                {
+                    auto command = ["tig", commit.sha];
+                    Command(command).workdir(commit.project.absolutePath).spawn.wait;
+                    return true;
+                }
+            case '3':
+                {
+                    auto command = [
+                        "magit", commit.project.absolutePath, commit.sha
+                    ];
+                    Command(command).spawn.wait;
+                    return true;
+                }
+            case 'q':
+                {
+                    state.finished = true;
+                    return true;
+                }
+            default:
+                {
+                    return false;
+                }
             }
         }
+        return false;
     });
     auto listAndDetails = new VSplit(113, // (+ 8 20 50 30 3 2) // age, repo, author, title, space between colums, list cursor
             list, scrolledDetails);
@@ -451,7 +486,7 @@ void historyTui(T, Results)(T work, Log log, Results results)
     auto globalStatus = new StatusBar(statusString, "1:gitk  2:tig  3:magit  q:quit  ESC:exit");
     auto root = new HSplit(-1, listAndDetails, globalStatus);
     root.setInputHandler((input) {
-        if (input.input == "\x1B")
+        if ((input.key == Key.escape) || ((input.key == Key.normal) && (input.c == 'q')))
         {
             state.finished = true;
             return true;
@@ -463,17 +498,25 @@ void historyTui(T, Results)(T work, Log log, Results results)
     ui.push(root);
     ui.resize();
 
+    bool inputHandled = true;
     while (!state.finished)
     {
-        ui.render();
+        if (inputHandled)
+        {
+            ui.render();
+        }
         auto input = terminal.getInput();
         if (input.ctrlC)
         {
             break;
         }
+        if ((input.key == Key.normal) && (input.c == 'c') && ((input.modifiers & Modifier.ctrl) != 0))
+        {
+            break;
+        }
         if (!input.empty)
         {
-            ui.handleInput(cast() input);
+            inputHandled = ui.handleInput(cast() input);
         }
     }
 }

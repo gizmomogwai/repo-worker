@@ -72,7 +72,7 @@ auto color(T)(string s, T color)
                             .headerSeparator(true)
                             .columnSeparator(true)
                         .to!string))
-  // dfmt on
+// dfmt on
 struct Arguments
 {
     @ArgumentGroup("Common arguments")
