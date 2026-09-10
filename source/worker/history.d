@@ -393,7 +393,6 @@ auto collectData(T)(T work, Log log)
     auto projects = work.projects.map!(project => tuple!("project", "log")(project, log)).array;
     "History for %s projects".format(projects.length).info();
 
-    // auto results = projects.map!(historyOfProject).joiner.array;
     return taskPool.amap!(historyOfProject)(projects).filter!(commits => commits.length > 0)
         .joiner
         .array

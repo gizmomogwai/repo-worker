@@ -92,6 +92,9 @@ struct Arguments
 
         @(NamedArgument("logLevel", "l").Description("Set logging level"))
         LogLevel logLevel;
+
+        @(NamedArgument.Description("Enable profiling"))
+        bool profile = false;
     }
     SubCommand!(Default!Review, Upload, Execute, Log) subcommand;
 }
