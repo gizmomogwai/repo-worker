@@ -16,17 +16,12 @@ import worker.history;
 import worker.review;
 import worker.traversal;
 import worker.upload;
-import profiled : theProfiler;
-
-void createProfiler(Arguments arguments)
-{
-    import profiled : NoopProfiler, Profiler;
-    theProfiler = arguments.profile ? new Profiler : new NoopProfiler;
-}
 
 int worker_(Arguments arguments)
 {
-    createProfiler(arguments);
+    import profiled : NoopProfiler, Profiler, theProfiler;
+
+    theProfiler = arguments.profile ? new Profiler : new NoopProfiler;
     scope (exit)
     {
         theProfiler.dumpJson("trace.json");
