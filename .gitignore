@@ -7,8 +7,9 @@ __dummy.html
 docs
 gen
 /libworker.a
-out
+out/main
 /trace.json
 *~
 /key.log
 *.lst
+result

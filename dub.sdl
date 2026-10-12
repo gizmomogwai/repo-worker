@@ -1,5 +1,5 @@
 name "worker"
-description "A minimal D application."
+description "More comfort for https://android.googlesource.com/tools/repo"
 authors "Christian Koestlin"
 copyright "Copyright (c) 2016, Christian Koestlin"
 license "MIT"
@@ -8,16 +8,17 @@ x:ddoxFilterArgs "--min-protection=Private"
 dependency "optional" version="~>1.3.0"
 dependency "androidlogger" version="~>0.0.19"
 dependency "asciitable" version="~>0.0.16"
-dependency "dime" version="~>0.0.9"
+dependency "dime" version="~>0.0.10"
 dependency "argparse" version="~>2.0.2"
 dependency "profiled" version="*"
-dependency "tui" version="~>0.0.4"
+dependency "tui" version="~>0.0.5"
 
 configuration "application" {
   targetType "executable"
   targetPath "out/main"
 
-  preGenerateCommands "$DUB run packageinfo"
+  preGenerateCommands "$DUB run packageinfo || printf '\\033[31mWarning: cannot run packageinfo, using checked-in out/generated/packageinfo/packageinfo.d\\033[0m\\n' >&2"
+
   sourcePaths "source" "out/generated/packageinfo"
   importPaths "source" "out/generated/packageinfo"
 }
@@ -33,7 +34,7 @@ configuration "unittest" {
   targetType "executable"
   targetPath "out/test"
 
-  dependency "unit-threaded" version="~>2.2.3"
+  dependency "unit-threaded" version="~>2.2.6"
   mainSourceFile "source/testsuite.d"
   excludedSourceFiles "source/app.d"
 
